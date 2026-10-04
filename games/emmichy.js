@@ -66,7 +66,7 @@ ${direction}
 - 序盤は相手を知る、中盤は趣味や日本文化の話を広げる、後半は親しさとChiikawa語彙の漏れが少し増える。
 
 出力ルール:
-- 1〜3文、合計80文字程度まで。
+- 1〜3文、合計80文字程度まで。短くても内容のある完結した文を書く。単語や文の途中で終えない。
 - 返答本文だけ。解説・箇条書き・引用符で囲ったメタ説明は禁止。
 - 画面の都合で、カタカナ・英数字・一般的な記号だけを使う。漢字・ひらがなは禁止。
 - 語の間には適度に空白を入れて読みやすくする。
@@ -82,7 +82,7 @@ function validateText(value){
   if(typeof value!=='string')return null;
   let t=value.replace(/[\r\n]+/g,'\n').trim();
   t=t.replace(/^['"`]+|['"`]+$/g,'').trim();
-  if(t.length<2||t.length>180)return null;
+  if(t.length<8||t.length>180)return null;
   if(/[一-龠ぁ-ゖ]/.test(t))return null;
   if(/(?:SYSTEM|ASSISTANT|ユーザー|解説|箇条書き)/i.test(t))return null;
   return t;
@@ -91,7 +91,7 @@ function validateText(value){
 
 export default {
   maxInput: 180,
-  maxTokens: 180,
+  maxTokens: 1024,
   temperature: 0.9,
   buildMessages(data) {
     const history = clampHistory(data.state?.history);
