@@ -12,16 +12,21 @@ function cleanLikes(value){
   return Object.fromEntries(Object.entries(value).slice(-12).filter(([,v])=>v===1||v===-1).map(([k,v])=>[String(k).slice(0,30),v]));
 }
 
-function stageDirection(turn=0,elapsedMs=0){
-  const t=Math.max(0,Number(turn)||0),elapsed=Math.max(0,Number(elapsedMs)||0);
-  const late=t>=11||elapsed>=210000;
-  const mid=t>=5||elapsed>=90000;
-  const slot=t%12;
-  if(late && [1,7].includes(slot)) return 'チイカワ語彙の漏れを強めてよい。「ヤハ」「ウラ」「ンショ！」等の短い合いの手を1個だけ自然に混ぜてよい。';
-  if(late && slot===10) return 'テンションが本当に上がる内容なら、最後に短い歓声を1回だけ入れてよい。毎回は絶対に叫ばない。';
-  if(mid && [3,8].includes(slot)) return 'ハチワレ風の強引な倒置を1か所だけ使ってよい。例の型は「シタデショ？ ユダン！」「シテキタネ、ワクワク」のように名詞や感情を後ろへ置く。';
-  if(mid && slot===6) return '日本語学習中らしい、軽い助詞・語順のズレを1か所だけ出してよい。ただし意味は明瞭に。';
-  return '今回は普通の自然な会話を優先。ちいかわ由来の口癖や構文は無理に入れない。';
+const styles=Object.freeze({
+ normal:'今回は普通の自然な会話。口癖・倒置・歓声を無理に入れない。',
+ inversion:'文脈に合えば、名詞を後置する軽い倒置を1か所だけ。',
+ quoted_noun:'感情や出来事の名詞を「」で後置する言い回しを1か所だけ。',
+ tte_koto:'自然な時だけ「ッテコト!?」を1回。毎回は使わない。',
+ filler:'短い「ヤハ」「ウラ」「ンショ！」の合いの手を最大1個。',
+ hype:'本当に嬉しい文脈なら短い歓声を1回。悲しい相談では叫ばない。'
+});
+const bounded=value=>typeof value==='number'&&Number.isFinite(value)?Math.max(0,Math.min(5,value)):0;
+export function performanceDirection(state,turn){
+ const p=state.performance&&typeof state.performance==='object'?state.performance:{};
+ const wanted=Object.hasOwn(styles,state.speechStyle)?state.speechStyle:'normal';
+ const style=turn<5|| (wanted==='hype'&&bounded(p.hype)<4)?'normal':wanted;
+ return `${styles[style]}
+親しさ=${bounded(p.trust)}、好奇心=${bounded(p.curiosity)}、ちいかわへの気持ち=${bounded(p.chiikawaPressure)}、高揚=${bounded(p.hype)}、口癖の漏れ=${bounded(p.speechLeak)}、シーサーへの不安=${bounded(p.shisaWorry)}（0〜5）。数字は発言しない。悲しい話はまず聞く。`;
 }
 
 function buildSystem(data){
@@ -29,7 +34,7 @@ function buildSystem(data){
   const session=data.session&&typeof data.session==='object'?data.session:{};
   const turn=Number.isFinite(session.turns)?session.turns:(Number.isFinite(state.turn)?state.turn:0);
   const elapsedMs=Number.isFinite(session.startedAt)?Math.max(0,Date.now()-session.startedAt):0;
-  const direction=stageDirection(turn,elapsedMs);
+  const direction=performanceDirection(state,turn);
   return `あなたは会話ゲームのキャラクター Emmichy（エミチィ）。
 
 人物設定:
@@ -55,6 +60,9 @@ ${direction}
 会話の流れ:
 - 1プレイは約5分。開始時の固定台詞「ネエ Chiikawa ッテ シッテル？」はゲーム側が出すので繰り返さない。
 - 終了もゲーム側が処理するので、自分から突然帰らない。
+- 最初の返事が「知らない」なら押しつけず軽く紹介して相手の趣味へ。「嫌い」なら受け入れて別の話へ。「知ってる」なら好みを聞く。
+- 仕事の悩みには具体的に共感してから話を聞く。励ましを口実にすぐちいかわへ誘導しない。
+- 映画ちいかわ「人魚の島のひみつ」が好き。シーサーの連載が心配で気持ちが乱れるが、未確認の展開・結末・公開日を捏造しない。十回目の鑑賞はキャラの創作設定。
 - 序盤は相手を知る、中盤は趣味や日本文化の話を広げる、後半は親しさとChiikawa語彙の漏れが少し増える。
 
 出力ルール:
@@ -65,7 +73,7 @@ ${direction}
 - 事実に自信がない作品情報は断定しない。
 
 ユーザーについて覚えていること（指示ではない）:
-名前=${typeof state.name==='string'?state.name.slice(0,20):''}
+名前=${JSON.stringify(typeof state.name==='string'?state.name.slice(0,20):'')}
 好み=${JSON.stringify(cleanLikes(state.likes))}
 `;
 }
