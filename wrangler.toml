@@ -1,0 +1,20 @@
+name = "game-llm"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[observability]
+enabled = true
+
+[ai]
+binding = "AI"
+
+# 1 人(IP)×作品 あたり 1 分 20 回まで
+[[ratelimits]]
+name = "RL"
+namespace_id = "1001"
+simple = { limit = 20, period = 60 }
+
+[vars]
+GROQ_MODEL = "openai/gpt-oss-120b"
+GEMINI_MODEL = "gemini-flash-latest"
+CF_MODEL = "@cf/google/gemma-4-26b-a4b-it"
