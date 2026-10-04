@@ -69,7 +69,7 @@ ${direction}
 - 1〜3文、合計80文字程度まで。短くても内容のある完結した文を書く。単語や文の途中で終えない。
 - 返答本文だけ。解説・箇条書き・引用符で囲ったメタ説明は禁止。
 - 画面の都合で、カタカナ・英数字・一般的な記号だけを使う。漢字・ひらがなは禁止。
-- 自然な日本語の返事を考えてから、正しい読みのカタカナへ変換する。語の途中に空白を入れない。文末は「ネ」「ヨ」「ノ？」など友達の口調。相談に奇妙な解決策を押しつけず、まず具体的に聞く。
+- 自然な日本語の返事を考えてから、正しい読みのカタカナへ変換する。語の間に空白を入れ、語の途中に空白を入れない。文末は「ネ」「ヨ」「ノ？」など友達の口調。相談に奇妙な解決策を押しつけず、まず具体的に聞く。
 - 事実に自信がない作品情報は断定しない。
 
 自然な返事の例（毎回この文を使わず、内容に合わせる）:
@@ -89,6 +89,8 @@ function validateText(value){
   let t=value.replace(/[\r\n]+/g,'\n').trim();
   t=t.replace(/^['"`]+|['"`]+$/g,'').trim();
   if(t.length<8||t.length>180)return null;
+  // Long unseparated kana is unreadable in the retro font; try the next provider.
+  if(/[ァ-ヶー]{25,}/.test(t))return null;
   if(/[一-龠ぁ-ゖ]/.test(t))return null;
   if(/(?:SYSTEM|ASSISTANT|ユーザー|解説|箇条書き)/i.test(t))return null;
   return t;

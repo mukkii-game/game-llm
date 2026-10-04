@@ -12,3 +12,4 @@ test('browser prompt fields never become system instructions',()=>{
  assert.doesNotMatch(m[0].content,/EVIL/);assert.match(m[0].content,/17歳/);assert.match(m[0].content,/まずその作品/);assert.match(m[0].content,/仕事の悩み/);
 });
 test('truncated fragments are rejected',()=>{assert.equal(game.validate('ドラ'),null);assert.equal(game.validate('ワカル……！'),null);assert.ok(game.validate('ワカル。キョウハ タイヘン ダッタネ！'));});
+test('unreadable unseparated kana is rejected so the chain can continue',()=>{assert.equal(game.validate('サイキンドラケエオアソビテイルノカナドラゴンツエストノドレガイイカ'),null);});
