@@ -22,7 +22,7 @@
 4. ゲーム側は `client/chat.js` をコピーして使う:
    ```js
    import { createChat } from './chat.js';
-   const chat = createChat({ url: 'https://game-llm.<サブドメイン>.workers.dev', game: '<作品名>' });
+   const chat = createChat({ url: 'https://game-llm.mucky-totoro.workers.dev', game: '<作品名>' });
    const { text, provider } = await chat.say(input, state, { session, fallback: () => ruleReply(input) });
    ```
    `?auto=1` `?seed=` `?replay=` `?nollm=1` の時は AI を呼ばずルール会話(自動確認と再生を壊さない)。
@@ -32,7 +32,9 @@ GitHub Pages 以外(itch.io 等)で公開する時は、`games/<作品名>.js` �
 ## 初回の準備(人間)
 repo の Settings → Secrets and variables → Actions に 4 つ:
 `GROQ_API_KEY` / `GEMINI_API_KEY` / `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID`。
-入れたら Actions → deploy → Run workflow。公開先の URL はその実行ログの最後に出る。
+入れたら Actions → deploy → Run workflow。
+
+公開先: **https://game-llm.mucky-totoro.workers.dev**(確認: `/health`)
 
 ## 鍵の期限
 Groq: 2027-10-01 / Cloudflare トークン: 2027-10-01 / Gemini: 期限なし(漏れたら AI Studio で削除して作り直す)。
