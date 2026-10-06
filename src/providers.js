@@ -6,7 +6,11 @@ export async function groq(env, messages, opt) {
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${env.GROQ_API_KEY}` },
-    body: JSON.stringify({ model: env.GROQ_MODEL || 'openai/gpt-oss-120b', temperature: opt.temperature, max_tokens: opt.maxTokens, messages }),
+    body: JSON.stringify({
+      model: env.GROQ_MODEL || 'openai/gpt-oss-120b', temperature: opt.temperature, max_tokens: opt.maxTokens, messages,
+      // gpt-oss は答える前に考える型。会話では考える量を減らして速さを優先する
+      ...((env.GROQ_MODEL || 'openai/gpt-oss-120b').includes('gpt-oss') ? { reasoning_effort: opt.reasoning || env.GROQ_REASONING || 'low' } : {}),
+    }),
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   if (!r.ok) throw new Error(`http-${r.status}`);
