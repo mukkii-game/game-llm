@@ -14,6 +14,15 @@ export default {
       { role: 'user', content: input },
     ];
   },
+  // 判定(任意): POST /api/decide/<作品名>/<名前> { state } で、選択肢ごとの確率が返る(Clef)。
+  // 質問の型: noul(はい/いいえの確率)・choice(criteria の中から選ぶ)・score(criteria の段階)。
+  decisions: {
+    enemy: {
+      questions: {
+        action: { type: 'choice', instructions: 'この敵は次に何をするべきか', criteria: { attack: '攻める', retreat: '逃げる', wait: '様子を見る' } },
+      },
+    },
+  },
   // 返事を検証する。だめなら null(次の AI に回る)。
   validate(text) {
     if (typeof text !== 'string') return null;

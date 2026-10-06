@@ -110,4 +110,13 @@ export default {
     ];
   },
   validate: validateText,
+  // 判定: プレイヤーの発言の種類と熱量(話し方の選択に使える)
+  decisions: {
+    talk: {
+      questions: {
+        intent: { type: 'choice', instructions: 'プレイヤーの最後の発言は何か', criteria: { question: '質問', share: '自分の話・感想', joke: 'ふざけ・ボケ', topic: '話題を変えた', bye: '別れ・終わり' } },
+        excitement: { type: 'score', instructions: 'プレイヤーの熱量', criteria: ['低い', '普通', '高い', 'とても高い'] },
+      },
+    },
+  },
 };

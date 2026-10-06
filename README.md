@@ -27,6 +27,12 @@
    ```
    `?auto=1` `?seed=` `?replay=` `?nollm=1` の時は AI を呼ばずルール会話(自動確認と再生を壊さない)。
 
+## 判定(Clef)
+文章ではなく「選択肢のどれか」を決めたい時(敵の行動、bot の戦術、会話の意図の分類)。Cloudflare の判定専用モデル Clef-flash を使い、選択肢ごとの確率が返る。
+- `games/<作品名>.js` の `decisions` に、名前ごとに質問と選択肢を書く(例は `_example.js`)。**質問はサーバー側にだけ置く。**
+- ゲーム側: `decideWith({ url, game, set, state })`(`client/chat.js`)。失敗したら null → 自前のルールで決める。
+- 会話と同じ Workers AI の無料枠を分け合う。毎フレーム呼ばない(状況が変わった時だけ)。
+
 GitHub Pages 以外(itch.io 等)で公開する時は、`games/<作品名>.js` の `origins` にそのサイトを足す。
 
 ## 初回の準備(人間)

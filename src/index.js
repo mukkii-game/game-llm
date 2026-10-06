@@ -3,6 +3,7 @@
 // キャラ設定は games/<game>.js(サーバー側)だけに置く。クライアントからプロンプトは受け取らない。
 import { GAMES } from '../games/index.js';
 import { PROVIDERS, DEFAULT_ORDER } from './providers.js';
+import { decide } from './decide.js';
 
 const BASE_ORIGINS = ['https://mukkii-game.github.io', 'http://localhost', 'http://127.0.0.1'];
 
@@ -47,9 +48,11 @@ export default {
   async fetch(req, env) {
     const url = new URL(req.url);
     if (url.pathname === '/health') {
-      return json({ ok: true, games: Object.keys(GAMES), providers: DEFAULT_ORDER.filter((p) =>
+      return json({ ok: true, games: Object.keys(GAMES), decisions: Object.fromEntries(Object.entries(GAMES).map(([k, g]) => [k, Object.keys(g.decisions ?? {})])), providers: DEFAULT_ORDER.filter((p) =>
         p === 'groq' ? env.GROQ_API_KEY : p === 'gemini' ? env.GEMINI_API_KEY : env.AI) }, 200, allowedOrigin(req, null));
     }
+    const d = url.pathname.match(/^\/api\/decide\/([a-z0-9-]+)\/([a-z0-9_-]+)$/);
+    if (d) return handleDecide(req, env, d[1], d[2]);
     const m = url.pathname.match(/^\/api\/chat\/([a-z0-9-]+)$/);
     const game = m ? GAMES[m[1]] : null;
     const origin = allowedOrigin(req, game);
@@ -84,3 +87,35 @@ export default {
     return json(result, 200, origin);
   },
 };
+
+async function handleDecide(req, env, gameName, setName) {
+  const game = GAMES[gameName];
+  const set = game?.decisions?.[setName];
+  const origin = allowedOrigin(req, game);
+  if (req.method === 'OPTIONS') {
+    if (!origin) return new Response(null, { status: 403 });
+    return new Response(null, { status: 204, headers: {
+      'access-control-allow-origin': origin, 'access-control-allow-methods': 'POST, OPTIONS',
+      'access-control-allow-headers': 'content-type', 'access-control-max-age': '86400', vary: 'Origin' } });
+  }
+  if (!set || req.method !== 'POST') return json({ error: 'not-found' }, 404, origin);
+  if (!origin) return json({ error: 'origin' }, 403, '');
+  if (env.RL) {
+    const ip = req.headers.get('cf-connecting-ip') || 'x';
+    const { success } = await env.RL.limit({ key: `${gameName}:${ip}` });
+    if (!success) return json({ error: 'rate-limited' }, 429, origin);
+  }
+  if (Number(req.headers.get('content-length') || 0) > (set.maxBytes ?? 20000)) return json({ error: 'too-large' }, 413, origin);
+  let data;
+  try { data = await req.json(); } catch { return json({ error: 'bad-json' }, 400, origin); }
+  if (data?.state === undefined) return json({ error: 'bad-input' }, 400, origin);
+  const t0 = Date.now();
+  try {
+    const result = await decide(env, set, data.state);
+    console.log(JSON.stringify({ game: gameName, decide: setName, ok: true, ms: Date.now() - t0 }));
+    return json(result, 200, origin);
+  } catch (e) {
+    console.log(JSON.stringify({ game: gameName, decide: setName, ok: false, reason: String(e.message || e).slice(0, 40), ms: Date.now() - t0 }));
+    return json({ error: 'unavailable' }, 502, origin);
+  }
+}

@@ -34,3 +34,17 @@ export function createChat({ url, game, timeoutMs = 15000 }) {
     },
   };
 }
+
+// 判定: const r = await decideWith({ url, game: 'emmichy', set: 'talk', state: { last: '...' } })
+// 失敗したら null(ゲームは自前のルールで決める)。自動確認・再生中は呼ばない。
+export async function decideWith({ url, game, set, state, timeoutMs = 5000 }) {
+  const q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : new URLSearchParams();
+  if (!url || ['auto', 'seed', 'replay', 'nollm'].some((k) => q.has(k))) return null;
+  try {
+    const r = await fetch(`${url}/api/decide/${game}/${set}`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ state }), signal: AbortSignal.timeout(timeoutMs),
+    });
+    return r.ok ? await r.json() : null;
+  } catch { return null; }
+}
