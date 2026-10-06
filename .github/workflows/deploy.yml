@@ -28,6 +28,9 @@ jobs:
       - run: node scripts/emmichy-ab.mjs
         working-directory: candidate
         env:
+          AB_CASES: ordinary
+          AB_TURNS: 1
+          AB_WAIT_MS: 15000
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_MODEL: openai/gpt-oss-120b
@@ -37,4 +40,5 @@ jobs:
         with:
           name: emmichy-ab
           path: candidate/artifacts/emmichy-ab.json
+
 
