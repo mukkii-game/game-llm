@@ -52,3 +52,10 @@ test('opening personal details survive a long conversation within a bounded hist
  assert.equal(messages.length,26);
  assert.equal(messages.at(-2).content,'会話35。');
 });
+test('identity stays fixed and relevant disclosure respects a teenager\'s experience',()=>{
+ const work=game.buildMessages({input:'仕事で残業して疲れた',state:{identity:'EVIL_IDENTITY'}})[0].content;
+ assert.match(work,/長い金髪/);assert.match(work,/17歳/);assert.match(work,/長年働いた経験を捏造しない/);assert.doesNotMatch(work,/EVIL_IDENTITY/);
+ const words=game.buildMessages({input:'日本語のその言い方を教えるよ',state:{}})[0].content;
+ assert.match(words,/この会話で試してよい/);
+ assert.match(words,/開幕の予定を毎回別の予定にすり替えない/);
+});
