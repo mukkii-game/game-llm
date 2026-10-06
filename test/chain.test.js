@@ -41,9 +41,10 @@ test('他サイトからの呼び出しは 403、未登録の作品は 404', asy
   assert.equal((await worker.fetch(post('/api/chat/nope', 'https://mukkii-game.github.io'), {})).status, 404);
 });
 
-test('Emmichy: 漢字・ひらがなの返事は不合格', async () => {
+test('Emmichy: 短すぎる返事は不合格、自然な日本語と従来のカナは受理', async () => {
   const { GAMES } = await import('../games/index.js');
   assert.equal(GAMES.emmichy.validate('こんにちは'), null);
+  assert.equal(GAMES.emmichy.validate('こんにちは！ 今日はどんな日だった？'), 'こんにちは！ 今日はどんな日だった？');
   assert.equal(GAMES.emmichy.validate('ハロー! ヨロシク ネ'), 'ハロー! ヨロシク ネ');
   const msgs = GAMES.emmichy.buildMessages({ input: 'ネコ', state: { history: [{ role: 'enny', text: 'ヤハ' }] } });
   assert.equal(msgs[0].role, 'system');
