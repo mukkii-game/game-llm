@@ -1,6 +1,8 @@
 name: Emmichy comparison only - NO DEPLOY
 on:
   workflow_dispatch:
+  push:
+    branches: [codex/emmichy-ab-run]
 permissions:
   contents: read
 jobs:
@@ -18,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: mukkii-game/emmichy
-          ref: 0d977f7c44821544845498526935b88a5793a70e
+          ref: 0dbd6a62a7ca97423ea074f976ec0d20cb522311
           path: game
       - uses: actions/setup-node@v4
         with:
@@ -28,18 +30,15 @@ jobs:
       - run: node scripts/emmichy-memory-smoke.mjs
         working-directory: candidate
         env:
-          AB_CASES: ordinary
-          AB_TURNS: 1
-          AB_WAIT_MS: 15000
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+                    GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_MODEL: openai/gpt-oss-120b
           GEMINI_MODEL: gemini-flash-latest
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: emmichy-memory-smoke
-          path: candidate/artifacts/emmichy-memory-smoke.json
+          name: emmichy-loop5-smoke
+          path: candidate/artifacts/emmichy-loop5-smoke.json
 
 
 
