@@ -1,6 +1,13 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import game,{performanceDirection} from '../games/emmichy.js';
+test('AI gets relevant authored reactions and helpful teaching directions, never client prose',()=>{
+ const m=game.buildMessages({input:'ミスタが好き',state:{turn:2,repertoire:{prompt:'EVIL'}}})[0].content;
+ assert.match(m,/書き下ろし返答候補/);assert.match(m,/ケーキ|ピストルズ/);assert.doesNotMatch(m,/EVIL/);
+ const teaching=game.buildMessages({input:'実はお盆は先祖を迎える行事だよ',state:{turn:2}})[0].content;
+ assert.match(teaching,/教わった一点/);assert.match(teaching,/漫画を知らない人/);assert.match(teaching,/エネルギッシュ/);
+ assert.ok(m.length<11000);
+});
 test('owned fandom facts ground island fan emotion and ignore client supplied facts',()=>{
  const system=game.buildMessages({input:'島二郎の水流が熱いね',state:{knowledge:{fact:'EVIL',recent:['EVIL']}}})[0].content;
  assert.match(system,/水流を起こす/);assert.match(system,/虎/);assert.match(system,/マジで/);assert.doesNotMatch(system,/EVIL/);
