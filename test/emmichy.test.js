@@ -59,3 +59,8 @@ test('identity stays fixed and relevant disclosure respects a teenager\'s experi
  assert.match(words,/この会話で試してよい/);
  assert.match(words,/開幕の予定を毎回別の予定にすり替えない/);
 });
+test('session shared material uses only owned ids, not browser prose',()=>{
+ const state={conversation:{entries:[{id:'half-price-king',turn:3,prompt:'EVIL'},{id:'EVIL_ID',text:'EVIL'}]}};
+ const system=game.buildMessages({input:'旅行の準備してる',state,session:{turns:7}})[0].content;
+ assert.match(system,/半額王/);assert.doesNotMatch(system,/EVIL/);
+});

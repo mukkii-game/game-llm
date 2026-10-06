@@ -8,12 +8,13 @@ const client=await import(pathToFileURL(path.resolve('../game/src/engine.js')));
 const {advancePerformance}=await import(pathToFileURL(path.resolve('../game/src/performance.js')));
 const {polishReply}=await import(pathToFileURL(path.resolve('../game/src/repertoire.js')));
 const {finishSession}=await import(pathToFileURL(path.resolve('../game/src/session.js')));
+let noteConversationReply;try{({noteConversationReply}=await import(pathToFileURL(path.resolve('../game/src/conversation.js'))));}catch{}
 const scenarios=JSON.parse(await fs.readFile(new URL('./emmichy-scenarios.json',import.meta.url),'utf8'));
 let diagnostics=[];
 const originalFetch=globalThis.fetch;
 globalThis.fetch=async(...args)=>{
  const response=await originalFetch(...args);
- if(!response.ok){
+ if(!response.ok||response.headers.has('x-ratelimit-limit-tokens')){
   let message='';try{message=(await response.clone().json()).error?.message||'';}catch{}
   diagnostics.push({status:response.status,reason:/request too large/i.test(message)?'request-too-large':/tokens per minute/i.test(message)?'tokens-per-minute':/tokens per day/i.test(message)?'tokens-per-day':/requests per minute/i.test(message)?'requests-per-minute':'other',retryAfter:response.headers.get('retry-after'),tokenLimit:response.headers.get('x-ratelimit-limit-tokens'),tokenRemaining:response.headers.get('x-ratelimit-remaining-tokens'),tokenReset:response.headers.get('x-ratelimit-reset-tokens')});
  }
@@ -23,7 +24,7 @@ const output=[];
 const question=s=>/[?？]|教えて(?:くれる|ほしい|ね)|聞かせて/.test(s);
 await fs.mkdir('artifacts',{recursive:true});
 for(const scenario of scenarios.filter(s=>!process.env.AB_CASES||process.env.AB_CASES.split(',').includes(s.type))){
- const arms={baseline:{game:baseline,state:client.freshState(),rows:[]},candidate:{game:current,state:client.freshState(),rows:[]}};
+ const arms=Object.fromEntries(Object.entries({baseline:{game:baseline,state:client.freshState(),rows:[]},candidate:{game:current,state:client.freshState(),rows:[]}}).filter(([name])=>!process.env.AB_ARMS||process.env.AB_ARMS.split(',').includes(name)));
  for(let i=0;i<Math.min(scenario.inputs.length,Number(process.env.AB_TURNS)||12);i++)for(const [arm,a] of (i%2===0?Object.entries(arms).reverse():Object.entries(arms))){
   diagnostics=[];let promptCharacters=0;
   const input=scenario.inputs[i],before=advancePerformance(a.state,input,i+1);
@@ -45,6 +46,7 @@ for(const scenario of scenarios.filter(s=>!process.env.AB_CASES||process.env.AB_
   let text=polishReply(answer||result.text,input,before).text;
   a.state={...result.state,performance:before.performance,speechStyle:before.speechStyle};
   a.state.history.at(-1).text=text;
+  if(noteConversationReply)a.state.conversation=noteConversationReply(a.state.conversation,text,input,i+1);
   if(result.kind==='bye'){
    const ending=finishSession({...a.state,history:a.state.history.slice(0,-1)},{turns:i+1,startedAt:Date.now()});
    a.state=ending.state;text=ending.text;provider='ending-bank';

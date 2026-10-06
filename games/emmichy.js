@@ -5,6 +5,7 @@ import {selectGap} from './emmichy-gap.js';
 import {chooseRepertoire,cleanRepertoire,replies} from './emmichy-repertoire.js';
 import {contextualNote} from './emmichy-context.js';
 import {lookupRequest,lookupNotes} from './emmichy-lookup.js';
+import {conversationNote} from './emmichy-conversation.js';
 
 function knowledgePrompt(input,state={},now=new Date()){
  const s=selectKnowledge(input,state,now);if(!s.work)return '';
@@ -116,6 +117,7 @@ Chiikawa由来の言葉の漏れ:
 今回の演技指示:
 ${direction}
 ${conversationDirection(data)}
+${conversationNote(state.conversation,turn,data.input)}
 本人としての今回の反応: ${identityDirection(data.input)}
 ${gapDirection(data.input,state)}
 
