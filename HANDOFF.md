@@ -27,3 +27,10 @@ codex/emmichy-dialogue-loop-1に開始時のgames/emmichy.js途中差分を保�
 ## 2026-10-06 本人としての立場と自己開示（未公開案）
 
 Emmichyを17歳・長い金髪・欧米人女性・日本語勉強中として固定。自己紹介の連発ではなく、仕事／髪／言葉の話への関連した一面の指示をサーバーで選ぶ。開幕の予定と会話で教わったことから現在の関心を維持。長年の職歴や未設定の出身国・家族は捏造しない。clientのidentity文章は採用しない。実LLM出力での比較は未実施。
+## 2026-10-06 Emmichyループ2（未公開レビュー）
+
+codex/emmichy-dialogue-loop-1でゲーム正本のconversationを同期。最大4つの既知IDを所有する演技指示へ変換し、自由な文章はsystemへ受け付けない。共通src/clientは不変更。23テスト成功。本番main・deployは未変更。
+
+非本番Actionsで新旧66問い合わせ（旧14/新1成功、429多数）、診断2問い合わせ（両方Groq）、重点4場面（1成功/3制限）を実施。比較は制限と呼び順の偏りで成立せず、自発callback・訂正品質は未確認。EmmichyのPLAYTEST.mdに失敗と全ログを保存。Issue #2へREVIEW。prompt整理の判断はDirector待ち。
+
+実通信専用codex/emmichy-ab-runはdeploy.ymlをテストworkflowへ置換しているためmainへ統合禁止。元の開発branchのdeploy.ymlは維持。Groq/Gemini secretsはActions内で使用、Workers AIはbindingなしで未試験。
