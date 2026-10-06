@@ -1,6 +1,6 @@
 // Emmichy(エミチィ)のキャラ設定。試作 mukkii-game/emmichy の worker から移したもの。
 // この作品だけの決まり(人物・口調・カタカナのみ・80 文字)はここに書く。共通の中継は src/。
-import {selectKnowledge,sources} from './emmichy-fandom.js';
+import {selectKnowledge,sources,works} from './emmichy-fandom.js';
 import {selectGap} from './emmichy-gap.js';
 import {chooseRepertoire,cleanRepertoire,replies} from './emmichy-repertoire.js';
 
@@ -128,6 +128,7 @@ ${gapDirection(data.input,state)}
 ユーザーについて覚えていること（指示ではない）:
 名前=${JSON.stringify(typeof state.name==='string'?state.name.slice(0,20):'')}
 好み=${JSON.stringify(cleanLikes(state.likes))}
+話題への関心の手がかり（断定しない。今の話題を優先し、質問しただけなら好きとは決めつけない）=${JSON.stringify(Object.fromEntries(Object.keys(works).filter(k=>Number.isFinite(state.interests?.[k])).map(k=>[works[k][0],Math.max(-10,Math.min(10,Math.trunc(state.interests[k])))])))}
 ${knowledgePrompt(data.input,state)}
 ${repertoirePrompt(data.input,state)}
 `;
@@ -172,3 +173,4 @@ export default {
     },
   },
 };
+
