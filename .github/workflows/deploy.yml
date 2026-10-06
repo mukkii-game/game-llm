@@ -18,14 +18,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: mukkii-game/emmichy
-          ref: eae577bb7898cd96753b249f8b584d910beae909
+          ref: 0d977f7c44821544845498526935b88a5793a70e
           path: game
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: node --test test/*.test.js
         working-directory: candidate
-      - run: node scripts/emmichy-ab.mjs
+      - run: node scripts/emmichy-memory-smoke.mjs
         working-directory: candidate
         env:
           AB_CASES: ordinary
@@ -38,7 +38,8 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: emmichy-ab
-          path: candidate/artifacts/emmichy-ab.json
+          name: emmichy-memory-smoke
+          path: candidate/artifacts/emmichy-memory-smoke.json
+
 
 
