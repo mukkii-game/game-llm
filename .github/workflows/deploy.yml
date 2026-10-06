@@ -13,12 +13,12 @@ jobs:
           path: candidate
       - uses: actions/checkout@v4
         with:
-          ref: 3870e45
+          ref: 3870e45cbe37e8075d782b39f161f23f18551cf0
           path: baseline
       - uses: actions/checkout@v4
         with:
           repository: mukkii-game/emmichy
-          ref: eae577b
+          ref: eae577bb7898cd96753b249f8b584d910beae909
           path: game
       - uses: actions/setup-node@v4
         with:
@@ -37,3 +37,4 @@ jobs:
         with:
           name: emmichy-ab
           path: candidate/artifacts/emmichy-ab.json
+
