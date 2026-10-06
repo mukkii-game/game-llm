@@ -1,12 +1,11 @@
 name: Emmichy comparison only - NO DEPLOY
 on:
   workflow_dispatch:
-  push:
-    branches: [codex/emmichy-ab-run]
 permissions:
   contents: read
 jobs:
   playtest:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
