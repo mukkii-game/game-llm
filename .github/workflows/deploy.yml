@@ -30,7 +30,7 @@ jobs:
       - run: node scripts/emmichy-memory-smoke.mjs
         working-directory: candidate
         env:
-                    GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_MODEL: openai/gpt-oss-120b
           GEMINI_MODEL: gemini-flash-latest
