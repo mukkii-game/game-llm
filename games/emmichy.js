@@ -3,6 +3,8 @@
 import {selectKnowledge,sources,works} from './emmichy-fandom.js';
 import {selectGap} from './emmichy-gap.js';
 import {chooseRepertoire,cleanRepertoire,replies} from './emmichy-repertoire.js';
+import {contextualNote} from './emmichy-context.js';
+import {lookupRequest,lookupNotes} from './emmichy-lookup.js';
 
 function knowledgePrompt(input,state={},now=new Date()){
  const s=selectKnowledge(input,state,now);if(!s.work)return '';
@@ -130,6 +132,8 @@ ${gapDirection(data.input,state)}
 好み=${JSON.stringify(cleanLikes(state.likes))}
 話題への関心の手がかり（断定しない。今の話題を優先し、質問しただけなら好きとは決めつけない）=${JSON.stringify(Object.fromEntries(Object.keys(works).filter(k=>Number.isFinite(state.interests?.[k])).map(k=>[works[k][0],Math.max(-10,Math.min(10,Math.trunc(state.interests[k])))])))}
 ${knowledgePrompt(data.input,state)}
+${contextualNote(data.input,state)}
+短い名前だけの返事は、まず直前に自分が尋ねた作品・人物・場面への回答として読む。知らない固有名詞を、似た音の一般語や別作品へ決めつけない。
 ${repertoirePrompt(data.input,state)}
 `;
 }
@@ -156,11 +160,13 @@ export default {
   temperature: 0.45,
   buildMessages(data) {
     const history = clampHistory(data.state?.history);
-    return [
+    const messages = [
       { role: 'system', content: buildSystem(data) },
       ...history.map((h) => ({ role: h.role === 'enny' ? 'assistant' : 'user', content: h.text })),
       { role: 'user', content: data.input.slice(0, 180) },
     ];
+    const request=lookupRequest(data.input,data.state);
+    return request?lookupNotes(request).then(note=>{messages[0].content+='\n'+note;return messages;}):messages;
   },
   validate: validateText,
   // 判定: プレイヤーの発言の種類と熱量(話し方の選択に使える)

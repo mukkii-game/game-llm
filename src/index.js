@@ -79,7 +79,7 @@ export default {
     const max = game.maxInput ?? 200;
     if (typeof data.input !== 'string' || !data.input.trim() || data.input.length > max) return json({ error: 'bad-input' }, 400, origin);
 
-    const messages = game.buildMessages(data);
+    const messages = await game.buildMessages(data);
     // 計測: プレイヤーの文章は記録しない。作品名・呼び先・成否・時間だけ。
     const log = (o) => console.log(JSON.stringify({ game: m[1], ...o }));
     const result = await runChain(env, game, messages, log);

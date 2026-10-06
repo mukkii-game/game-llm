@@ -50,3 +50,12 @@ test('Emmichy: 短すぎる返事は不合格、自然な日本語と従来の�
   assert.equal(msgs[0].role, 'system');
   assert.equal(msgs.at(-1).content, 'ネコ');
 });
+test('chat waits for asynchronous game-owned lookup before calling the provider',async()=>{
+ const {GAMES}=await import('../games/index.js');const original=GAMES.emmichy.buildMessages;
+ try{
+  GAMES.emmichy.buildMessages=async()=>[{role:'system',content:'LOOKED_UP_CONTEXT'},{role:'user',content:'キャラ'}];
+  globalThis.fetch=async(_url,opt)=>{const body=JSON.parse(opt.body);assert.equal(body.messages[0].content,'LOOKED_UP_CONTEXT');return ok('その作品のキャラのことね！ どの場面が好き？');};
+  const request=new Request('https://w.dev/api/chat/emmichy',{method:'POST',headers:{Origin:'https://mukkii-game.github.io','content-type':'application/json','CF-Connecting-IP':'test-async'},body:JSON.stringify({input:'キャラ',state:{}})});
+  const response=await worker.fetch(request,{GROQ_API_KEY:'k',PROVIDERS:'groq'});assert.equal(response.status,200);
+ }finally{GAMES.emmichy.buildMessages=original;}
+});
