@@ -28,13 +28,13 @@ function json(body, status, origin) {
 // 成功するまで順番に試す。検証で落ちた返事も「失敗」として次へ進む。
 export async function runChain(env, game, messages, log) {
   const order = (env.PROVIDERS ? env.PROVIDERS.split(',') : game.providers ?? DEFAULT_ORDER).map((s) => s.trim());
-  const opt = { temperature: game.temperature ?? 0.9, maxTokens: game.maxTokens ?? 200 };
+  const opt = { temperature: game.temperature ?? 0.9, maxTokens: game.maxTokens ?? 200, timeoutMs: game.providerTimeoutMs ?? 9000 };
   for (const name of order) {
     const call = PROVIDERS[name];
     if (!call) continue;
     const t0 = Date.now();
     try {
-      const text = game.validate(await call(env, messages, opt));
+      const text = game.validate(await call(env, messages, opt), {messages});
       log({ provider: name, ok: Boolean(text), reason: text ? '' : 'rejected', ms: Date.now() - t0 });
       if (text) return { text, provider: name };
     } catch (e) {

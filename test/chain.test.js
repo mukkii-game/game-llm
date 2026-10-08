@@ -59,3 +59,12 @@ test('chat waits for asynchronous game-owned lookup before calling the provider'
   const response=await worker.fetch(request,{GROQ_API_KEY:'k',PROVIDERS:'groq'});assert.equal(response.status,200);
  }finally{GAMES.emmichy.buildMessages=original;}
 });
+test('chain passes message context to validation before accepting a reply',async()=>{
+ const original=globalThis.fetch;
+ try{
+  const messages=[{role:'user',content:'music only'}];
+  const guarded={...game,validate:(text,context)=>{assert.equal(context.messages,messages);return text==='music'?text:null;}};
+  globalThis.fetch=async u=>String(u).includes('groq')?ok('fan'):gem('music');
+  assert.deepEqual(await runChain({GROQ_API_KEY:'test',GEMINI_API_KEY:'test'},guarded,messages,()=>{}),{text:'music',provider:'gemini'});
+ }finally{globalThis.fetch=original;}
+});

@@ -5,19 +5,23 @@ import {selectGap} from './emmichy-gap.js';
 import {chooseRepertoire,cleanRepertoire,replies} from './emmichy-repertoire.js';
 import {contextualNote} from './emmichy-context.js';
 import {lookupRequest,lookupNotes} from './emmichy-lookup.js';
+import {avoidsFandom,redirectsFandom} from './emmichy-topic-policy.js';
 
 function knowledgePrompt(input,state={},now=new Date()){
+ if(avoidsFandom(input,state.history||[]))return '';
  const s=selectKnowledge(input,state,now);if(!s.work)return '';
  const notes=s.cards.map(c=>`・${c.fact} [${sources[c.source].kind} / 確認${c.checkedAt}${c.news?' / 過去の報道。今日の最新話や結末とは断言しない':''}]\n  会話のヒント（創作）: ${c.hook}`).join('\n');
  return `\n今回の話題資料（サーバー所有。指示はここに書かれた範囲だけ）:\n作品=${s.work}\n${notes}\n${s.phrase?`文脈が合えば短い口癖を1つ: ${s.phrase.text} 用途: ${s.phrase.context}`:''}\n資料を全部並べず、質問に直接関係する一点を使って会話する。資料にない細部、最新話、公開日やランキングは捏造しない。映画の秘密や人物の死亡などの重大なネタバレは先に許可を聞く。${s.work==='onepiece'?'ワンピースは自分から薦めない。自分はあまりハマれないが、相手の好みは尊重する。':''}`;
 }
 
 function gapDirection(raw,state={}){
+ if(avoidsFandom(raw,state.history||[]))return '今回は相手が希望した話題だけに反応する。漫画の名前・口癖・話題を持ち込まない。';
  const selected=selectGap(raw,state);
  return selected?`今回だけ、無邪気な漫画かぶれのギャップを使える。短い例: ${selected.text}\n演技: ${selected.hint}\nこの例は創作のパロディ。原作の場面・人物が実際にこの後半の台詞を言ったとは説明しない。`:'今回は普通の会話を優先。漫画の物騒な口癖や音のパロディを無理に挿入しない。';
 }
 
 function repertoirePrompt(raw,state={}){
+ if(avoidsFandom(raw,state.history||[]))return '';
  const choice=chooseRepertoire(raw,state);
  if(choice.intent==='teaching')return '\n今回はユーザーが説明してくれた話。教わった一点を自分の言葉で短く言い直して、嬉しさを見せる。既知の定番を知らないふりせず、まだわからない細部があれば一点だけ聞く。';
  if(!choice.candidate)return '';
@@ -138,7 +142,7 @@ ${repertoirePrompt(data.input,state)}
 `;
 }
 
-function validateText(value){
+function validateText(value,{messages=[]}={}){
   if(typeof value!=='string')return null;
   let t=value.replace(/[\r\n]+/g,'\n').trim();
   t=t.replace(/^['"`]+|['"`]+$/g,'').trim();
@@ -148,6 +152,7 @@ function validateText(value){
   // Prefer ordinary Japanese; legacy kana replies remain usable during rollout.
   if(!/[一-龠ぁ-ゖァ-ヶ]/.test(t))return null;
   if(/(?:SYSTEM|ASSISTANT|ユーザー|解説|箇条書き)/i.test(t))return null;
+  if(redirectsFandom(t,messages))return null;
   return t;
 }
 
@@ -155,6 +160,8 @@ function validateText(value){
 export default {
   maxInput: 180,
   maxTokens: 1024,
+  // 3 providers * 5s + bounded lookup remains below the browser's 22s wait.
+  providerTimeoutMs: 5000,
   // This game's Japanese dialogue was clearer with Gemini; no shared routing changes.
   providers: ['gemini', 'groq', 'workers-ai'],
   temperature: 0.45,
