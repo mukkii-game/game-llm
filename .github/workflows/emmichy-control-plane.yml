@@ -1,0 +1,25 @@
+name: Emmichy read-only Worker diagnosis - NO DEPLOY
+on:
+  push:
+    branches: [codex/emmichy-live-smoke-20261008]
+    paths:
+      - scripts/emmichy-control-plane.py
+      - .github/workflows/emmichy-control-plane.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - run: python scripts/emmichy-control-plane.py
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emmichy-control-plane
+          path: control-plane.json
