@@ -2,6 +2,18 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import game,{performanceDirection} from '../games/emmichy.js';
 
+test('persona uses a brief Japan visit and nearby names without forcing Chiikawa onto an unrelated topic',()=>{
+ const system=game.buildMessages({input:'桃が美味しいよね',state:{}})[0].content;
+ assert.match(system,/日本に来たのは短期間だけ/);assert.match(system,/耳知識/);assert.match(system,/手がかりがなければ今の話/);
+ assert.match(system,/"name":"モモンガ"/);assert.match(system,/"soft":true/);assert.match(system,/聞き間違い/);
+ const hunter=game.buildMessages({input:'ヒソカ',state:{knowledge:{work:'hunter'}}})[0].content;
+ assert.match(hunter,/"name":"ヒソカ"/);assert.match(hunter,/まずその名前を拾って反応/);
+ const rain=game.buildMessages({input:'今日は雨の匂いがした',state:{knowledge:{work:'hunter'}}})[0].content;
+ assert.doesNotMatch(rain,/名前の聞き取り/);
+ const refused=game.buildMessages({input:'ちいかわ以外の話にして',state:{}})[0].content;
+ assert.doesNotMatch(refused,/名前の聞き取り/);
+});
+
 test('player humor feedback overrides old assistant catchphrases without deleting user feedback',()=>{
  const messages=game.buildMessages({input:'プリンを買った',state:{history:[{role:'enny',text:'半額王、スプーンも装備してね。'},{role:'user',text:'半額王はつまらないよ'},{role:'enny',text:'ﾊﾝｶﾞｸ ｵｳ、またね。'}]}});
  assert.match(messages[0].content,/広く使われる言い回し/);assert.match(messages[0].content,/偶然の言い間違い/);
