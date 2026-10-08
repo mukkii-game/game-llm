@@ -1,6 +1,14 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import game,{performanceDirection} from '../games/emmichy.js';
+
+test('player humor feedback overrides old assistant catchphrases without deleting user feedback',()=>{
+ const messages=game.buildMessages({input:'プリンを買った',state:{history:[{role:'enny',text:'半額王、スプーンも装備してね。'},{role:'user',text:'半額王はつまらないよ'},{role:'enny',text:'ﾊﾝｶﾞｸ ｵｳ、またね。'}]}});
+ assert.match(messages[0].content,/広く使われる言い回し/);assert.match(messages[0].content,/偶然の言い間違い/);
+ assert.match(messages[0].content,/半額王.*使用禁止/);assert.match(messages[0].content,/固定の決めネタにしない/);
+ assert.equal(messages.filter(m=>m.role==='assistant').length,0);
+ assert.ok(messages.some(m=>m.role==='user'&&m.content==='半額王はつまらないよ'));
+});
 test('AI gets relevant authored reactions and helpful teaching directions, never client prose',()=>{
  const m=game.buildMessages({input:'ミスタが好き',state:{turn:2,repertoire:{prompt:'EVIL'}}})[0].content;
  assert.match(m,/書き下ろし返答候補/);assert.match(m,/ケーキ|ピストルズ/);assert.doesNotMatch(m,/EVIL/);

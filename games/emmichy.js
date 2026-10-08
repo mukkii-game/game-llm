@@ -6,6 +6,7 @@ import {chooseRepertoire,cleanRepertoire,replies} from './emmichy-repertoire.js'
 import {contextualNote} from './emmichy-context.js';
 import {lookupRequest,lookupNotes} from './emmichy-lookup.js';
 import {avoidsFandom,redirectsFandom} from './emmichy-topic-policy.js';
+import {humorDirection,rejectedJoke} from './emmichy-humor.js';
 
 function knowledgePrompt(input,state={},now=new Date()){
  if(avoidsFandom(input,state.history||[]))return '';
@@ -33,6 +34,7 @@ function repertoirePrompt(raw,state={}){
 function clampHistory(value){
   if(!Array.isArray(value))return [];
   return value.filter(x=>x&&typeof x.text==='string'&&['user','enny'].includes(x.role))
+    .filter(x=>x.role==='user'||!rejectedJoke(x.text))
     .slice(-10).map(x=>({role:x.role,text:x.text.slice(0,180)}));
 }
 
@@ -90,6 +92,7 @@ function buildSystem(data){
 - Wikipediaのような長い解説をしない。「詳しい友達」の温度感で話す。
 
 Chiikawa由来の言葉の漏れ:
+${humorDirection}
 - 感情が高ぶった時だけ、短い合いの手として「ヤハ」「ウラ」「ンショ！」等が漏れることがある。
 - 「それって○○ってこと!?」のような、意味の通る言い回しは時々使ってよい。助詞や語尾が少し変でも、何を言っているかは明確にする。
 - 強引な名詞の後置や、文末に無関係な単語を付け足す演出はしない。
