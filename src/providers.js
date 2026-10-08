@@ -11,7 +11,7 @@ export async function groq(env, messages, opt) {
       // gpt-oss は答える前に考える型。会話では考える量を減らして速さを優先する
       ...((env.GROQ_MODEL || 'openai/gpt-oss-120b').includes('gpt-oss') ? { reasoning_effort: opt.reasoning || env.GROQ_REASONING || 'low' } : {}),
     }),
-    signal: AbortSignal.timeout(TIMEOUT_MS),
+    signal: AbortSignal.timeout(opt.timeoutMs ?? TIMEOUT_MS),
   });
   if (!r.ok) throw new Error(`http-${r.status}`);
   const out = await r.json();
@@ -34,7 +34,7 @@ export async function gemini(env, messages, opt) {
       contents,
       generationConfig: { temperature: opt.temperature, maxOutputTokens: opt.maxTokens },
     }),
-    signal: AbortSignal.timeout(TIMEOUT_MS),
+    signal: AbortSignal.timeout(opt.timeoutMs ?? TIMEOUT_MS),
   });
   if (!r.ok) throw new Error(`http-${r.status}`);
   const out = await r.json();
@@ -43,9 +43,12 @@ export async function gemini(env, messages, opt) {
 
 export async function workersAi(env, messages, opt) {
   if (!env.AI) throw new Error('no-binding');
-  const out = await env.AI.run(env.CF_MODEL || '@cf/google/gemma-4-26b-a4b-it', {
+  let timer;
+  const timedOut=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('timeout')),opt.timeoutMs??TIMEOUT_MS);});
+  let out;
+  try{out=await Promise.race([env.AI.run(env.CF_MODEL || '@cf/google/gemma-4-26b-a4b-it', {
     messages, temperature: opt.temperature, max_tokens: opt.maxTokens,
-  });
+  }),timedOut]);}finally{clearTimeout(timer);}
   return out?.response ?? out?.result?.response ?? '';
 }
 
