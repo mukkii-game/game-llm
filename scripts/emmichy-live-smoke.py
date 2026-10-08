@@ -26,7 +26,7 @@ def request(path, body=None):
     try:
         result = json.loads(raw)
     except ValueError:
-        result = {'error': 'non-json-response'}
+        result = {'error': 'non-json-response', 'responseSnippet': raw[:1200]}
     return {'status': status, 'body': result, 'seconds': round(time.monotonic()-started, 2)}
 
 
