@@ -1,0 +1,25 @@
+name: Emmichy bounded live smoke - NO DEPLOY
+on:
+  push:
+    branches: [codex/emmichy-live-smoke-20261008]
+    paths:
+      - scripts/emmichy-live-smoke.py
+      - .github/workflows/emmichy-live-smoke.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: emmichy-bounded-live-smoke
+  cancel-in-progress: false
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - run: python scripts/emmichy-live-smoke.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emmichy-live-smoke
+          path: live-smoke.json
