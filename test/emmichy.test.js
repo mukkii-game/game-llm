@@ -1,6 +1,22 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import game,{performanceDirection} from '../games/emmichy.js';
+import {profilePrompt} from '../games/emmichy-profile.js';
+
+test('owned fixed portfolio and expanded Chiikawa priority reach the public model',()=>{
+ const system=game.buildMessages({input:'ヒソカとトクマルシューゴ',state:{profile:{home:'EVIL'},knowledge:{work:'hunter'},age:99}})[0].content;
+ assert.match(system,/最優先で照合/);assert.match(system,/"name":"トクマルシューゴ"/);
+ assert.match(system,/作曲・編曲/);assert.match(system,/anime-chiikawa/);
+ assert.ok(system.includes(profilePrompt()));assert.match(system,/スウェーデン.*ヨーテボリ/);
+ assert.match(system,/東京に5日間、1度/);assert.doesNotMatch(system,/EVIL|99歳/);
+ const mixed=game.buildMessages({input:'ジョジョとハチワロ',state:{knowledge:{work:'jojo'}}})[0].content;
+ assert.match(mixed,/"name":"ハチワレ"/);assert.match(mixed,/"soft":true/);
+ assert.match(mixed,/別作品への具体的な質問に答える/);
+ const question=game.buildMessages({input:'ヒソカのバンジーガムって何？チャルメラも買った',state:{}})[0].content;
+ assert.match(question,/"name":"チャルメラ"/);assert.match(question,/ゴムとガム/);
+ const serious=game.buildMessages({input:'オリオンビールより病気の相談をしたい',state:{}})[0].content;
+ assert.doesNotMatch(serious,/名前の聞き取り/);
+});
 
 test('persona uses a brief Japan visit and nearby names without forcing Chiikawa onto an unrelated topic',()=>{
  const system=game.buildMessages({input:'桃が美味しいよね',state:{}})[0].content;
