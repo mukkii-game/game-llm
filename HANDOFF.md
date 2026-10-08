@@ -32,3 +32,14 @@ Emmichy専用の指示を2〜4個の短い完結文へ。最初の答えに具�
 ゲーム正本の名前辞書・認識ロジックを games/emmichy-{names,name-data,game-names}.js へ同期。ブラウザの自由な資料は採用せず、サーバー辞書の一致一項目だけを名前ヒントにする。全辞書をpromptへ入れず、名前から未確認の原作行動を捏造しない。同期は emmichy/scripts/sync-dialogue.mjs ../game-llm --names-only。共通のサービス・プロバイダー順・予算・タイムアウト・鍵は変更なし。
 
 27件テスト成功。Worker bundle dry-run成功、492.38 KiB / gzip 107.30 KiB（検証CLIはキャッシュ取得されたWrangler 4.148.0。依存定義の変更なし）。新しい実LLM品質比較は未実施。codex/emmichy-topic-continuation-20261008からPR作成・公開反映を確認する段階。公開状態の正本はEmmichy HANDOFFへ。
+
+公開確認: PR #4をmainへ統合、commit b33ab18279a61d62d7cf301c7756fe6a01ec5e48。deploy run 37800294235 success、Worker version ec013283-a276-4a02-8acd-98189c809388。ゲーム側PR #13もPages公開success。ゲームのmainは未統合。実LLM品質比較は未実施。
+
+
+## 2026-10-09 Emmichy ちいかわ優先と固定ポートフォリオ
+
+- codex/emmichy-chiikawa-profile-20261009。公開済みPR #4の続き。唯一のEmmichy Work、自動Relayなし。
+- フロント正本から名前／ちいかわ追加資料／本人ポートフォリオ／作品選択を同期。ちいかわ182項目・360表記。固有名・近似を先に拾い、一般語は文脈限定。新しい名前だけで無関係な映画の事実を選ばない。複数作品への質問に該当する別作品資料も最大2件添える。拒否と深刻な相談を優先。
+- 本人設定を共有: 17歳、スウェーデンのヨーテボリ近郊、両親と14歳弟、地元高校、東京に5日1度だけ家族旅行。耳知識・軽い勘違い。クライアントのプロフィール指示やプレイヤー記憶で本人経歴を変えない。
+- 中継28テスト、構文／差分、bundle dry-run成功。実LLM品質比較はしていない。フロント113テスト・ローカル実画面確認。
+- 公開追随の既存許可でmain統合・deploy確認へ進める。Emmichy本体mainは対象外。LLMの自然さ、近似の頻度、設定一貫性は試遊で残す。

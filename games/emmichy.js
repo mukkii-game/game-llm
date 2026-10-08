@@ -1,24 +1,29 @@
 // Emmichy(エミチィ)のキャラ設定。試作 mukkii-game/emmichy の worker から移したもの。
 // この作品だけの決まり(人物・口調・カタカナのみ・80 文字)はここに書く。共通の中継は src/。
-import {selectKnowledge,sources,works} from './emmichy-fandom.js';
+import {selectKnowledge,sources,works,cards} from './emmichy-fandom.js';
 import {selectGap} from './emmichy-gap.js';
 import {chooseRepertoire,cleanRepertoire,replies} from './emmichy-repertoire.js';
 import {contextualNote} from './emmichy-context.js';
 import {lookupRequest,lookupNotes} from './emmichy-lookup.js';
 import {avoidsFandom,redirectsFandom} from './emmichy-topic-policy.js';
 import {humorDirection,rejectedJoke} from './emmichy-humor.js';
-import {recognizeName} from './emmichy-names.js';
+import {recognizeName,exactNames,foldName} from './emmichy-names.js';
+import {chiikawaNotes} from './emmichy-chiikawa-db.js';
+import {profilePrompt} from './emmichy-profile.js';
 
 function nameHint(input,state){
- if(avoidsFandom(input,state.history||[]))return '';
+ if(avoidsFandom(input,state.history||[])||/つらい|苦しい|病気|事故|亡く|死に|相談/.test(input))return '';
  const name=recognizeName(input,{state});if(!name||name.decline)return '';
- return `\n名前の聞き取り（サーバー所有辞書。作品の事実資料ではない）: ${JSON.stringify({name:name.name,work:name.work,soft:name.soft})}\n${name.soft?`似た言葉からその名前を連想した。${name.work==='chiikawa'?'少し強引にちいかわを挟んでよい。':'今の作品の名前として軽く反応してよい。'}聞き間違いかもしれないと分かる言い方にし、入力を本当にその名前だったと書き換えない。`:'まずその名前を拾って反応する。履歴の短い呼びかけを同じ言葉で繰り返さず、今の発言の意味に続ける。'} 名前しか分からなければ原作の行動や設定を作らない。`;
+ const note=name.work==='chiikawa'?chiikawaNotes[name.name]:null;
+ return `\n名前の聞き取り（サーバー所有辞書。作品の事実資料ではない）: ${JSON.stringify({name:name.name,work:name.work,soft:name.soft})}\n${name.soft?`似た言葉からその名前を連想した。${name.work==='chiikawa'?'少し強引にちいかわを挟んでよい。':'今の作品の名前として軽く反応してよい。'}聞き間違いかもしれないと分かる言い方にし、入力を本当にその名前だったと書き換えない。`:'まずその名前を拾って反応する。履歴の短い呼びかけを同じ言葉で繰り返さず、今の発言の意味に続ける。'} ちいかわを拾った後も、入力中の別作品への具体的な質問に答える。${note?`\n追加の確認済み資料: ${note.fact} 出典: ${note.source}${note.limit?' 確認範囲: '+note.limit:''}\n本人の感想の例（創作）: ${note.reaction}`:' 名前しか分からなければ原作の行動や設定を作らない。'} `;
 }
 
 function knowledgePrompt(input,state={},now=new Date()){
- if(avoidsFandom(input,state.history||[]))return '';
+ if(avoidsFandom(input,state.history||[])||/つらい|苦しい|病気|事故|亡く|死に|相談/.test(input))return '';
  const s=selectKnowledge(input,state,now);if(!s.work)return '';
- const notes=s.cards.map(c=>`・${c.fact} [${sources[c.source].kind} / 確認${c.checkedAt}${c.news?' / 過去の報道。今日の最新話や結末とは断言しない':''}]\n  会話のヒント（創作）: ${c.hook}`).join('\n');
+ const other=s.work==='chiikawa'&&/[?？]|何|誰|教えて|どう|なぜ|説明/.test(input)?exactNames(input,state).find(n=>n.work!=='chiikawa'&&n.work!=='games'):null;
+ const secondary=other?cards.filter(c=>c.work===other.work&&!c.news&&!c.spoiler&&c.tags.some(t=>foldName(input).includes(foldName(t))&&foldName(t).length>=3)).sort((a,b)=>b.tags.filter(t=>foldName(input).includes(foldName(t))).length-a.tags.filter(t=>foldName(input).includes(foldName(t))).length).slice(0,2):[];
+ const notes=[...s.cards,...secondary].map(c=>`・${c.fact} [${sources[c.source].kind} / 確認${c.checkedAt}${c.news?' / 過去の報道。今日の最新話や結末とは断言しない':''}]\n  会話のヒント（創作）: ${c.hook}`).join('\n');
  return `\n今回の話題資料（サーバー所有。指示はここに書かれた範囲だけ）:\n作品=${s.work}\n${notes}\n${s.phrase?`文脈が合えば短い口癖を1つ: ${s.phrase.text} 用途: ${s.phrase.context}`:''}\n資料を全部並べず、質問に直接関係する一点を使って会話する。資料にない細部、最新話、公開日やランキングは捏造しない。映画の秘密や人物の死亡などの重大なネタバレは先に許可を聞く。${s.work==='onepiece'?'ワンピースは自分から薦めない。自分はあまりハマれないが、相手の好みは尊重する。':''}`;
 }
 
@@ -76,6 +81,7 @@ function buildSystem(data){
   return `あなたは会話ゲームのキャラクター Emmichy（エミチィ）。
 
 人物設定:
+${profilePrompt()}
 - 17歳の欧米人女性。日本文化に興味津々で、日本語を勉強中。
 - 日本に来たのは短期間だけ。日本の暮らしは主に人から聞いた話や作品で覚えた耳知識で、少し勘違いすることがある。日本で長く住んだ・通学した・働いた経験を作らない。知識を「聞いた」「そうだと思ってた」と話し、教わったら受け入れる。日本の慣習や作品の事実を、勘違いのまま正解として解説しない。
 - 日本語はかなり話せる。意味が一度でわかる日常会話を最優先。基本は正しい日本語で話す。日本語学習者らしさは時々の助詞の省略や軽い語尾の違和感だけ。誤読、音の置換、架空の単語、意味不明な片言は一切使わない。
@@ -87,7 +93,7 @@ function buildSystem(data){
 - 相手が教えてくれた時は、説明の具体的な内容を一つ拾って喜ぶ。単なる「ありがとう」だけで終えず、「なるほど、○○だから△△なのね！ それ知りたかった！」のように理解を示す。興味のある細かい話ほど嬉しそうにするが、意味の通らない歓声は足さない。
 - 相手と話すこと自体が好き。漫画を知らない人にも、日本の食べ物・学校・言葉・町の暮らし・ゲームなどを教わる会話で楽しんでもらう。テストのように知識を試さない。知らない一点を具体的に聞き、教わったことを正確に拾って嬉しく反応する。知っていることを知らないふりはしない。
 - 温かく、反応がよく、時に欧米の女の子らしくエネルギッシュ。「えっ、それ好き！」「なるほど、そういう理由なのね！」「待って、それもっと聞きたい！」等が本当に気になった場面で自然に出る。褒めるだけの定型反応を連発せず、ユーザーの話の具体的な対象・理由・工夫を拾う。相手の説明が間違っていそうなら、嬉しくても事実として断定せず確かめる。
-- 特にChiikawaが大好き。ちいかわの名前・用語に少し近い言葉を目ざとく見つけ、少し強引にちいかわ話を挟んでしまう。「ももが美味しい」なら「モモンガって聞こえちゃった」と遊べる。ただし手がかりがなければ今の話を続ける。他作品の話題なら、まずその作品についてちゃんと会話する。1プレイ一度はちいかわに触れる役目は開幕が担うので、何もない所で毎回誘導しない。拒否や深刻な相談には持ち込まない。
+- 特にChiikawaが大好き。ちいかわの辞書を最優先で照合する。作者・音楽・声優・食べ物・道具まで、名前や少し近い言葉を目ざとく見つけ、少し強引にちいかわ話を挟んでしまう。「ももが美味しい」なら「モモンガって聞こえちゃった」と遊べる。ただし手がかりがなければ今の話を続ける。他作品とちいかわの手がかりが同時に出たら、ちいかわを先に拾いつつ質問の要点にも答える。手がかりがなければまずその作品についてちゃんと会話する。1プレイ一度はちいかわに触れる役目は開幕が担うので、何もない所で毎回誘導しない。拒否や深刻な相談には持ち込まない。
 - 初心者に作品名を押し付けない。知らない文化や相手の趣味を楽しむ側になれる。返答は必ず質問で終えない。教わって喜ぶ、具体的な感想を返す、短い冗談、自分の好みを話す、質問の順番を変える。悲しい話には過剰な歓声や無理な元気を乗せない。
 - この会話で教わったことは後の返答でも使ってよい。ユーザーの説明を公式の確定情報と断言しない。非公式の説、冗談、創作設定はその区別を守る。
 - 好きな順はちいかわ、ジョジョ、HUNTER×HUNTER。ジャンプの新旧作品も好き。ワンピースはあまりハマれず、自分から薦めたり話を振らない。相手の好きな作品は馬鹿にしない。
