@@ -5,7 +5,7 @@ from pathlib import Path
 import urllib.error
 import urllib.request
 
-EXPECTED_VERSION = "01c35ad6-6eeb-41d0-91ed-bcd8f417eaff"
+EXPECTED_VERSION = "d0458ac3-23c7-4ccd-b820-26ad9fd0fbf0"
 
 
 def summarize(kind, result):
@@ -18,10 +18,12 @@ def summarize(kind, result):
                 ("AI", "RL", "GROQ_API_KEY", "GEMINI_API_KEY")},
                 "compatibility_date": result.get("compatibility_date")}
     deployments = result.get("deployments", []) if isinstance(result, dict) else result
-    return {"deployments": [{"created_on": d.get("created_on"),
-                             "versions": d.get("versions", [])} for d in deployments],
-            "expected_version_present": any(v.get("version_id") == EXPECTED_VERSION
-                for d in deployments for v in d.get("versions", []))}
+    latest = deployments[0] if deployments else {}
+    versions = [{"version_id": v.get("version_id"), "percentage": v.get("percentage")}
+                for v in latest.get("versions", [])]
+    return {"latest_created_on": latest.get("created_on"), "active_versions": versions,
+            "expected_version_active": any(v.get("version_id") == EXPECTED_VERSION
+                and v.get("percentage") == 100 for v in versions)}
 
 
 def main():
