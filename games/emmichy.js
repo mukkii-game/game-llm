@@ -10,12 +10,14 @@ import {avoidsFandom,redirectsFandom} from './emmichy-topic-policy.js';
 import {humorDirection,rejectedJoke} from './emmichy-humor.js';
 import {recognizeName,exactNames,foldName} from './emmichy-names.js';
 import {chiikawaNotes} from './emmichy-chiikawa-db.js';
-import {profilePrompt} from './emmichy-profile.js';
+import {placeDirection} from './emmichy-places.js';
+import {profilePrompt,praiseDirection} from './emmichy-profile.js';
 
 function nameHint(input,state){
  if(avoidsFandom(input,state.history||[])||/つらい|苦しい|病気|事故|亡く|死に|相談/.test(input))return '';
  const name=recognizeName(input,{state});if(!name||name.decline)return '';
  const note=name.work==='chiikawa'?chiikawaNotes[name.name]:null;
+ if(name.work==='japan')return placeDirection(name);
  return `\n名前の聞き取り（サーバー所有辞書。作品の事実資料ではない）: ${JSON.stringify({name:name.name,work:name.work,soft:name.soft})}\n${name.soft?`似た言葉からその名前を連想した。${name.work==='chiikawa'?'少し強引にちいかわを挟んでよい。':'今の作品の名前として軽く反応してよい。'}聞き間違いかもしれないと分かる言い方にし、入力を本当にその名前だったと書き換えない。`:'まずその名前を拾って反応する。履歴の短い呼びかけを同じ言葉で繰り返さず、今の発言の意味に続ける。'} ちいかわを拾った後も、入力中の別作品への具体的な質問に答える。${note?`\n追加の確認済み資料: ${note.fact} 出典: ${note.source}${note.limit?' 確認範囲: '+note.limit:''}\n本人の感想の例（創作）: ${note.reaction}`:' 名前しか分からなければ原作の行動や設定を作らない。'} `;
 }
 
@@ -159,6 +161,7 @@ ${gapDirection(data.input,state)}
 ${knowledgePrompt(data.input,state)}
 ${contextualNote(data.input,state)}
 ${nameHint(data.input,state)}
+${praiseDirection(data.input,state)}
 短い名前だけの返事は、まず直前に自分が尋ねた作品・人物・場面への回答として読む。知らない固有名詞を、似た音の一般語や別作品へ決めつけない。
 ${repertoirePrompt(data.input,state)}
 `;
