@@ -2,6 +2,17 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import game,{performanceDirection} from '../games/emmichy.js';
 import {profilePrompt} from '../games/emmichy-profile.js';
+test('Japan places and personal praise reach the model with owned context',()=>{
+ const place=game.buildMessages({input:'アキハバラ',state:{}})[0].content;
+ assert.match(place,/日本の地名として知っている: 秋葉原/);assert.match(place,/アニメ・ゲームのお店/);
+ assert.match(place,/https:\/\/www.japan.travel\/en\/spot\/2178/);
+ const mixed=game.buildMessages({input:'秋葉原でハチワレを買う',state:{}})[0].content;
+ assert.match(mixed,/"name":"ハチワレ"/);
+ const praise=game.buildMessages({input:'カミ ガタ ガ カワイイネ',state:{}})[0].content;
+ assert.match(praise,/今回の褒め言葉は自分/);assert.match(praise,/戦闘スタイル.*置き換えない/);
+ const third=game.buildMessages({input:'ハチワレかわいい',state:{}})[0].content;
+ assert.doesNotMatch(third,/今回の褒め言葉は自分/);
+});
 test('a JoJo familiarity question receives owned material instead of an empty answer candidate',()=>{
  const system=game.buildMessages({input:'シラナイ ノカイ ジョジョ ?',state:{turn:3}})[0].content;
  assert.match(system,/書き下ろし返答候補/);assert.match(system,/知ってるよ/);assert.match(system,/スタンド/);
