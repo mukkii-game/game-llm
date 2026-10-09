@@ -75,3 +75,28 @@ test('ordinary Japanese is accepted for client-side kana display',()=>{
  assert.match(system,/知ったかぶりせず/);assert.match(system,/説明の具体的な内容/);
  assert.deepEqual(game.providers,['gemini','groq','workers-ai']);
 });
+
+test('island cooking facts stay distinct from the island parfait and survive output validation',async()=>{
+ const messages=await game.buildMessages({input:'島二郎は何を作るの？',state:{knowledge:{work:'chiikawa'},turn:2}});
+ assert.match(messages[0].content,/カツカレーと貝汁/);assert.match(messages[0].content,/フルーツパフェは島の別の食べ物/);
+ const bad='島二郎が作るのは「島二郎のフルーツパフェ」だったんだ。';
+ assert.match(game.validate(bad),/カツカレーと貝汁/);
+ const correct='島二郎の料理はカツカレーと貝汁。フルーツパフェは島の別の食べ物だよ。';assert.equal(game.validate(correct),correct);
+ const negated='島二郎のフルーツパフェじゃないよ。島の名物の方。';assert.equal(game.validate(negated),negated);
+ const usagi=await game.buildMessages({input:'ウサギ カッコイイヨネ',state:{knowledge:{work:'jojo'}}});assert.match(usagi[0].content,/"name":"うさぎ"/);assert.doesNotMatch(usagi[0].content,/"name":"セッコ"/);
+});
+
+test('self aliases are the same person and personal answers remain grounded',async()=>{
+ const m=await game.buildMessages({input:'えみちいは何歳？',state:{}});
+ assert.match(m[0].content,/えみちい・エミチイ・エミチィ・えみちぃ・emmichyは全て自分/);assert.match(m[0].content,/興味を持ってもらうと嬉しく/);assert.match(m[0].content,/17/);assert.match(m[0].content,/同じ台詞を本文で繰り返さない/);
+});
+
+test('sexual vocabulary redirects without a fandom lookup and language learning has concrete examples',async()=>{
+ const m=await game.buildMessages({input:'エミチィ、セックスって？',state:{}});
+ assert.match(m[0].content,/固定反応.*別の話題/);assert.match(m[0].content,/長音・小さいっ/);assert.match(m[0].content,/運行.*うんこ/);
+});
+
+test('Chiikawa expertise is firsthand while ordinary Japanese life stays hearsay',async()=>{
+ const m=await game.buildMessages({input:'モモンガが好き',state:{}});
+ assert.match(m[0].content,/原作は全部読んでいて、アニメも見ている/);assert.match(m[0].content,/自分の感想も/);assert.match(m[0].content,/耳知識とは区別/);assert.match(m[0].content,/未確認の場面や台詞.*作って断定しない/);
+});
