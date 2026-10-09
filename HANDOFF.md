@@ -52,3 +52,5 @@ Emmichy専用の指示を2〜4個の短い完結文へ。最初の答えに具�
 - codex/emmichy-name-acknowledgment-20261009。フロント正本の名前認識を同期し、漢字仮名と「チイカワ イガイ」のカタカナ入力をともに拒否として扱う。「チイカワ、ネ。」の確認はフロントで750ms後、拒否時は作品資料をLLMへ押し込まない。
 - 中継28件成功。カタカナでの拒否に名前資料／今回話題資料／書き下ろし候補が添付されないことを追加検証。フロント116件と実画面成功。実LLM品質比較なし。
 - 既存の公開追随許可でmainへ反映する。詳細・公開状態の正本はEmmichy HANDOFF、公開版release20261009-pacing2を予定。自動Relayなし。
+
+- 公開確認: PR #6 main統合de018d1104d894e55acc4c99e5b6fef19f75c0d4、deploy run37864577146 success、Worker version2e428552-f958-4f8b-95d9-6163bbf18745。フロントPR #15 / Pages run37864582519 success、release20261009-pacing2。共有namesはimport先変換を除き一致。実LLM品質比較なし。
