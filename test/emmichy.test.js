@@ -2,6 +2,10 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import game,{performanceDirection} from '../games/emmichy.js';
 import {profilePrompt} from '../games/emmichy-profile.js';
+test('a JoJo familiarity question receives owned material instead of an empty answer candidate',()=>{
+ const system=game.buildMessages({input:'シラナイ ノカイ ジョジョ ?',state:{turn:3}})[0].content;
+ assert.match(system,/書き下ろし返答候補/);assert.match(system,/知ってるよ/);assert.match(system,/スタンド/);
+});
 
 test('owned fixed portfolio and expanded Chiikawa priority reach the public model',()=>{
  const system=game.buildMessages({input:'ヒソカとトクマルシューゴ',state:{profile:{home:'EVIL'},knowledge:{work:'hunter'},age:99}})[0].content;
