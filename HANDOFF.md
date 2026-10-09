@@ -88,3 +88,9 @@ Emmichy専用の指示を2〜4個の短い完結文へ。最初の答えに具�
 - codex/emmichy-place-llm-20261009。Emmichy正本のnames/profile/placesを同期。JNTO公式112地名を認識し、ちいかわ優先を維持。秋葉原をアニメ・ゲームの電気街として知る方向、訪問歴や資料のない観光事実を作らない方向をモデルへ渡す。
 - 裸の褒め言葉は本人が喜び、明示他キャラの評価と否定は別。髪への褒め言葉を戦闘比喩にしない方向をモデルへ渡す。
 - 中継34件成功、実モデル通信追加なし。フロント側の初回通常返答でAI優先とtimerはEmmichy側で制御。既存許可で中継mainへ公開追随する。
+
+
+### 公開確認
+
+- code candidate10535b92db84280c83ef5dc665e5fdd20e179441、PR #10 main統合be05a64f4112c8570663b6c1d736d001ca741854。Deploy run37870725942 success、Worker version2f6e24ed-0b5c-467c-b7c3-b40c2db198e6。
+- 中継34件・ゲーム140件成功。frontend PR #21 / Pages run37870731048 success、release20261009-talk1、配信16ファイル一致。追加実LLM通信なし、自然さの人間試遊は継続。
