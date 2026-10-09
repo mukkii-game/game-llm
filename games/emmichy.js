@@ -38,9 +38,10 @@ function repertoirePrompt(raw,state={}){
  const choice=chooseRepertoire(raw,state);
  if(choice.intent==='teaching')return '\n今回はユーザーが説明してくれた話。教わった一点を自分の言葉で短く言い直して、嬉しさを見せる。既知の定番を知らないふりせず、まだわからない細部があれば一点だけ聞く。';
  if(!choice.candidate)return '';
+ const familiarity=choice.intent==='familiarity'?'\n今回は作品を知っているかの確認。本人が好きで資料もある作品なので、まず「知ってるよ」と答え、確認済みの一点と好きなところへつなぐ。未確認の細部を尋ねられた扱いで、作品全体を知らないふりにしない。':'';
  const cardId=choice.candidate.cardId,mem=cleanRepertoire(state.repertoire);
  const examples=replies.filter(r=>r.cardId===cardId&&r.mode==='react'&&!mem.ids.includes(r.id)).slice(0,3);
- return `\nえみちぃの書き下ろし返答候補（原作台詞や公式事実ではなく、この子の感想）:\n${examples.map(r=>`・${r.text}`).join('\n')}\nこの候補よりユーザーの質問への答えを優先。合う気持ちや言い回しを一つだけ混ぜられる。候補を登場人物が原作で実際に言った台詞やした行動に変換しない。最近の自分の返答と同じ文、同じお菓子のオチ、同じ質問の型は避ける。無理な引用や語尾の付け足しはしない。`;
+ return `${familiarity}\nえみちぃの書き下ろし返答候補（原作台詞や公式事実ではなく、この子の感想）:\n${examples.map(r=>`・${r.text}`).join('\n')}\nこの候補よりユーザーの質問への答えを優先。合う気持ちや言い回しを一つだけ混ぜられる。候補を登場人物が原作で実際に言った台詞やした行動に変換しない。最近の自分の返答と同じ文、同じお菓子のオチ、同じ質問の型は避ける。無理な引用や語尾の付け足しはしない。`;
 }
 
 function clampHistory(value){
