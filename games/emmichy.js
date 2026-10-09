@@ -1,6 +1,7 @@
+import {topicDeflection} from './emmichy-deflection.js';
 // Emmichy(エミチィ)のキャラ設定。試作 mukkii-game/emmichy の worker から移したもの。
 // この作品だけの決まり(人物・口調・カタカナのみ・80 文字)はここに書く。共通の中継は src/。
-import {selectKnowledge,sources,works,cards} from './emmichy-fandom.js';
+import {selectKnowledge,sources,works,cards,islandMenuCorrection} from './emmichy-fandom.js';
 import {selectGap} from './emmichy-gap.js';
 import {chooseRepertoire,cleanRepertoire,replies} from './emmichy-repertoire.js';
 import {contextualNote} from './emmichy-context.js';
@@ -83,6 +84,7 @@ function buildSystem(data){
 
 人物設定:
 ${profilePrompt()}
+${topicDeflection(data.input,data.state)?'今回は性的な言葉への固定反応。驚いて少し照れ、ごまかして別の話題へ切り替える。具体的な内容を説明したり掘り下げたりしない。':''}
 - 17歳の欧米人女性。日本文化に興味津々で、日本語を勉強中。
 - 日本に来たのは短期間だけ。日本の暮らしは主に人から聞いた話や作品で覚えた耳知識で、少し勘違いすることがある。日本で長く住んだ・通学した・働いた経験を作らない。知識を「聞いた」「そうだと思ってた」と話し、教わったら受け入れる。日本の慣習や作品の事実を、勘違いのまま正解として解説しない。
 - 日本語はかなり話せる。意味が一度でわかる日常会話を最優先。基本は正しい日本語で話す。日本語学習者らしさは時々の助詞の省略や軽い語尾の違和感だけ。誤読、音の置換、架空の単語、意味不明な片言は一切使わない。
@@ -173,7 +175,7 @@ function validateText(value,{messages=[]}={}){
   if(!/[一-龠ぁ-ゖァ-ヶ]/.test(t))return null;
   if(/(?:SYSTEM|ASSISTANT|ユーザー|解説|箇条書き)/i.test(t))return null;
   if(redirectsFandom(t,messages))return null;
-  return t;
+  return islandMenuCorrection(t)||t;
 }
 
 
@@ -192,7 +194,7 @@ export default {
       ...history.map((h) => ({ role: h.role === 'enny' ? 'assistant' : 'user', content: h.text })),
       { role: 'user', content: data.input.slice(0, 180) },
     ];
-    const request=lookupRequest(data.input,data.state);
+    const request=topicDeflection(data.input,data.state)?null:lookupRequest(data.input,data.state);
     return request?lookupNotes(request).then(note=>{messages[0].content+='\n'+note;return messages;}):messages;
   },
   validate: validateText,
