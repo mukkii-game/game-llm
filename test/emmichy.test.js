@@ -28,6 +28,8 @@ test('persona uses a brief Japan visit and nearby names without forcing Chiikawa
  assert.doesNotMatch(rain,/名前の聞き取り/);
  const refused=game.buildMessages({input:'ちいかわ以外の話にして',state:{}})[0].content;
  assert.doesNotMatch(refused,/名前の聞き取り/);
+ const kanaRefused=game.buildMessages({input:'チイカワ イガイ ノ ハナシ ヲ シヨウ カ',state:{}})[0].content;
+ assert.doesNotMatch(kanaRefused,/名前の聞き取り|今回の話題資料|書き下ろし返答候補/);
 });
 
 test('player humor feedback overrides old assistant catchphrases without deleting user feedback',()=>{
