@@ -1,6 +1,6 @@
 # 2026-10-10 Emmichy: bounded virtual-player corrections
 
-Frontend player testing found a preference question read as personal affection, and a prefixed hometown question treated as unknown. Synced canonical owned profile selection/response only. No provider/client/key changes and no live calls. All37 backend tests pass; frontend153 and targeted actual-app replay pass. Branch codex/virtual-player-review-20261010; candidate awaiting authorized publication. The root session remains Director, with manually bounded tester subagents rather than Relay.
+Frontend player testing found a preference question read as personal affection, and a prefixed hometown question treated as unknown. Synced canonical owned profile selection/response only. No provider/client/key changes and no live calls. All37 backend tests pass; frontend153 and targeted actual-app replay pass. Branch codex/virtual-player-review-20261010; published: PR13 candidate acfb50e6cb5bdce499eea04175ddfc05143029b8 merged as6ea99e6b6139cb70473d5b8469a26939257c7d1a. Deploy38012657591 success, Worker95da9ad0-8d3b-4564-aabe-15aa66cb6290. Frontend PR25/Pages38012656355 also success; all12 changed public files match bc44d51. Frontend main unchanged. This report changes docs only. The root session remains Director, with manually bounded tester subagents rather than Relay.
 
 ---
 
