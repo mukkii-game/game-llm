@@ -1,6 +1,12 @@
+# 2026-10-10 Emmichy: bounded virtual-player corrections
+
+Frontend player testing found a preference question read as personal affection, and a prefixed hometown question treated as unknown. Synced canonical owned profile selection/response only. No provider/client/key changes and no live calls. All37 backend tests pass; frontend153 and targeted actual-app replay pass. Branch codex/virtual-player-review-20261010; candidate awaiting authorized publication. The root session remains Director, with manually bounded tester subagents rather than Relay.
+
+---
+
 ## 2026-10-10 Emmichy：ちいかわで大興奮／胸の自作ちいかわ
 
-Frontend正本profile/fandomを同期。普通の「話して？」を未確認の細部質問扱いしない。大喜びして所有の好きな話を2〜3個、具体的な質問・訂正には先に応じる。出力検証で以前の保留だけの台詞を修復。直前の保存済み場面を指す続きは場面を先に拾う。胸の白い飾りは本人が作ったちいかわと固定し、visible-ornament cueとモデル設定へ統一。プレイヤーの持ち物・拒否・深刻な相談は優先。共有provider/key設定は変更なし、追加実通信なし。出身はスウェーデン・ヨーテボリ近郊で生まれ育った設定に統一。本人の国名／都市名の表示読みと短い自発的な本人の話も同じ正本から取得。37テスト成功。公開候補とDeploy/Workerは統合後に追記する。
+Frontend正本profile/fandomを同期。普通の「話して？」を未確認の細部質問扱いしない。大喜びして所有の好きな話を2〜3個、具体的な質問・訂正には先に応じる。出力検証で以前の保留だけの台詞を修復。直前の保存済み場面を指す続きは場面を先に拾う。胸の白い飾りは本人が作ったちいかわと固定し、visible-ornament cueとモデル設定へ統一。プレイヤーの持ち物・拒否・深刻な相談は優先。共有provider/key設定は変更なし、追加実通信なし。出身はスウェーデン・ヨーテボリ近郊で生まれ育った設定に統一。本人の国名／都市名の表示読みと短い自発的な本人の話も同じ正本から取得。37テスト成功。PR12候補dfd22fad6aafd3c9f511e45ee2281b180df2116cをmainへcbd867dcded1c76cea822c54dd2ac2e25d27fc53として統合。Deploy38011718144成功、Workercf4349d1-13b1-4562-a1f7-ff8d8b6c3412。Emmichy PR24／Pages38011721715成功、配信13ファイルが候補46813e0e14ec334254ce70194872353040135264と一致。frontend main未変更。この追記はruntimeを変更しない。
 
 ## 2026-10-10 Emmichy：好意と話題の継続
 
