@@ -2,6 +2,18 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import game,{performanceDirection} from '../games/emmichy.js';
 import {profilePrompt} from '../games/emmichy-profile.js';
+test('ambiguous affection delights Emmichy and known favourites keep their subject',()=>{
+ for(const input of ['スキダヨ','好きだよ','愛してる','好みだよ']){
+  const system=game.buildMessages({input,state:{}})[0].content;
+  assert.match(system,/対象が曖昧なら/);assert.match(system,/大げさなくらい喜ぶ/);assert.match(system,/静かな返事で済ませず/);
+ }
+ const named=game.buildMessages({input:'ハチワレが好き',state:{}})[0].content;
+ assert.match(named,/好き・愛・好みはハチワレへの好意/);assert.match(named,/好きな対象の話を続ける/);
+ const place=game.buildMessages({input:'秋葉原が好き',state:{}})[0].content;
+ assert.match(place,/好き・愛・好みは秋葉原への好意/);
+ const denied=game.buildMessages({input:'好きじゃない',state:{}})[0].content;
+ assert.doesNotMatch(denied,/今回の褒め言葉は自分/);
+});
 test('Japan places and personal praise reach the model with owned context',()=>{
  const place=game.buildMessages({input:'アキハバラ',state:{}})[0].content;
  assert.match(place,/日本の地名として知っている: 秋葉原/);assert.match(place,/アニメ・ゲームのお店/);

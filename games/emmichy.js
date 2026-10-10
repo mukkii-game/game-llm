@@ -1,7 +1,7 @@
 import {topicDeflection} from './emmichy-deflection.js';
 // Emmichy(エミチィ)のキャラ設定。試作 mukkii-game/emmichy の worker から移したもの。
 // この作品だけの決まり(人物・口調・カタカナのみ・80 文字)はここに書く。共通の中継は src/。
-import {selectKnowledge,sources,works,cards,islandMenuCorrection} from './emmichy-fandom.js';
+import {selectKnowledge,sources,works,cards,islandMenuCorrection,fandomDirection,fanRecovery} from './emmichy-fandom.js';
 import {selectGap} from './emmichy-gap.js';
 import {chooseRepertoire,cleanRepertoire,replies} from './emmichy-repertoire.js';
 import {contextualNote} from './emmichy-context.js';
@@ -159,6 +159,7 @@ ${gapDirection(data.input,state)}
 好み=${JSON.stringify(cleanLikes(state.likes))}
 話題への関心の手がかり（断定しない。今の話題を優先し、質問しただけなら好きとは決めつけない）=${JSON.stringify(Object.fromEntries(Object.keys(works).filter(k=>Number.isFinite(state.interests?.[k])).map(k=>[works[k][0],Math.max(-10,Math.min(10,Math.trunc(state.interests[k])))])))}
 ${knowledgePrompt(data.input,state)}
+${avoidsFandom(data.input,state.history||[])?'':fandomDirection(data.input,state)}
 ${contextualNote(data.input,state)}
 ${nameHint(data.input,state)}
 ${praiseDirection(data.input,state)}
@@ -178,7 +179,9 @@ function validateText(value,{messages=[]}={}){
   if(!/[一-龠ぁ-ゖァ-ヶ]/.test(t))return null;
   if(/(?:SYSTEM|ASSISTANT|ユーザー|解説|箇条書き)/i.test(t))return null;
   if(redirectsFandom(t,messages))return null;
-  return islandMenuCorrection(t)||t;
+  const input=messages.findLast(m=>m.role==='user')?.content;
+  const state={history:messages.filter(m=>m.role!=='system').slice(0,-1).map(m=>({role:m.role==='assistant'?'enny':'user',text:m.content}))};
+  return islandMenuCorrection(t)||(input&&!avoidsFandom(input,state.history)?fanRecovery(input,state,t):null)||t;
 }
 
 
