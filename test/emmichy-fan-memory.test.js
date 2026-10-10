@@ -2,6 +2,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import game from '../games/emmichy.js';
 import {selectKnowledge} from '../games/emmichy-fandom.js';
+test('Chiikawa invitation and handmade chest ornament reach public prompting and repair stalled replies',async()=>{
+ for(const input of ['ちいかわの話して？','胸のそれ何？']){
+  const messages=await game.buildMessages({input,state:{knowledge:{work:'hunter'}}});
+  assert.match(messages[0].content,/大興奮.*2〜3個/);
+  const reply=game.validate('その話、もっとしたい！ その細かいところは確かめてから話すね。',{messages});
+  assert.doesNotMatch(reply,/細かいところ|知らない|猫/);assert.match(reply,/ハチワレ/);assert.match(reply,/ラッコ/);
+  if(input.startsWith('胸')){assert.match(messages[0].content,/自分で作ったちいかわ/);assert.match(reply,/アタシが作った/);}
+  assert.ok(reply.length<=180);
+ }
+ const messages=await game.buildMessages({input:'ちいかわの作者は誰？',state:{}});
+ const answer='ナガノさんが作者だよ。絵の表情が大好き！';assert.equal(game.validate(answer,{messages}),answer);
+ const origin=await game.buildMessages({input:'スウェーデン生まれなの？',state:{}});
+ assert.match(origin[0].content,/スウェーデンのヨーテボリ近郊で生まれ育ち/);
+});
 
 test('persistent topic cues reach the prompt after transcript eviction; corrections stay connected and enthusiastic',async()=>{
  const knowledge=selectKnowledge('島二郎の水流とハチワレ',{knowledge:{work:'chiikawa'}}).memory;
