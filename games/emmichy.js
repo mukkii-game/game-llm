@@ -188,8 +188,8 @@ function validateText(value,{messages=[]}={}){
 export default {
   maxInput: 180,
   maxTokens: 1024,
-  // 3 providers * 5s + bounded lookup remains below the browser's 22s wait.
-  providerTimeoutMs: 5000,
+  // Move on quickly to the next provider; the screen has an eight-second budget.
+  providerTimeoutMs: 2500,
   // This game's Japanese dialogue was clearer with Gemini; no shared routing changes.
   providers: ['gemini', 'groq', 'workers-ai'],
   temperature: 0.45,
