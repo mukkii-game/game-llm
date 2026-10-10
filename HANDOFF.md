@@ -1,6 +1,6 @@
 # 2026-10-10 Emmichy: responsive provider chain
 
-Only Emmichy providerTimeoutMs changes5000→2500 to move to the next provider quickly within the frontend8sec reply budget. Gemini/Groq/Workers order, maxTokens and shared providers stay unchanged. All37 backend tests passed. Branch codex/llm-responsive-20261010; authorized main publication pending. Frontend ordinary bank turns now keep requesting AI,2sec/5sec waiting beats; first actual-app baseline accepted Groq in6032ms. No subagents/new service.
+Only Emmichy providerTimeoutMs changes5000→2500 to move to the next provider quickly within the frontend8sec reply budget. Gemini/Groq/Workers order, maxTokens and shared providers stay unchanged. All37 backend tests passed. Branch codex/llm-responsive-20261010; published: PR14 candidate781c67650e72b308fc38d567dc145f623d782640, mergef79214fd07e1cf74da33d277b18ff16ebe81f864, Deploy38013628053 success. Frontend follow-up PR27 pending; final selection is AI priority without a mix quota, DB for waiting/fallback/fan enthusiasm. Live probe returned one200/Groq/3653ms and two502; no extra calls after discovering frontend session-copy race. Shared provider settings unchanged. Frontend ordinary bank turns now keep requesting AI,2sec/5sec waiting beats; first actual-app baseline accepted Groq in6032ms. No subagents/new service.
 
 # 2026-10-10 Emmichy: bounded virtual-player corrections
 
