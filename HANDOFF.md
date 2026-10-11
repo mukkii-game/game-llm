@@ -1,6 +1,20 @@
+# 2026-10-12 Emmichy: focused Chiikawa candidate (unpublished)
+
+Code candidate7a9df963df168cb43ff4f4ea2621367d0106b629, draft PR15; paired frontend7d975cbf1430d7d21feb01476dc85dd43589b3db, draft PR28. Both branches pushed, neither merged. This report-only follow-up records identities without runtime changes.
+
+Branch codex/chiikawa-dialogue-20261011, main remains f79214fd07e1cf74da33d277b18ff16ebe81f864. Good generated text stays intact at the relay; browser owns final content repair. Return truthful source metadata with backward-compatible validator results. Substantive delivered history20/6000 replaces filler-heavy model context. Canonical persona and relevant sourced relations25 are synced from Emmichy, with raw Japanese input and uncertain current serial explicitly scoped. No paid service.
+
+Emmichy only: Groq→Gemini→Workers; requestBudgetMs7200 including buildMessages/lookup, each provider maximum3500ms, stop on429. Other games retain their settings. 51 tests pass. Shared index supports provenance and per-game budgets; source ownership and request timing covered by targeted tests.
+
+Manual quality-check mode in existing deploy workflow ran on candidate2c9cfb0, run38131712099; deploy SKIPPED. Two Groq replies739/560ms total then429 stopped. Both outputs included unsupported Chiikawa scenes; subsequent prompt/relations and frontend guard tested only locally with captured outputs. No final live generation claim. Full evidence and human-play instructions in Emmichy/docs/chiikawa-pilot-20261012.md. One Sol6.1 medium offline virtual reviewer6 sends; implementation/verification helpers used explicitly Luna/Sol settings documented there.
+
+Next: review candidate PR and request user's publication permission for backend/main and frontend/pilot together. Do not deploy merely to repeat a live quality check; no further provider calls after429 in this round. This single session remains Director/Implementer/Tester; no Work/Relay.
+
+---
+
 # 2026-10-10 Emmichy: responsive provider chain
 
-Only Emmichy providerTimeoutMs changes5000→2500 to move to the next provider quickly within the frontend8sec reply budget. Gemini/Groq/Workers order, maxTokens and shared providers stay unchanged. All37 backend tests passed. Branch codex/llm-responsive-20261010; authorized main publication pending. Frontend ordinary bank turns now keep requesting AI,2sec/5sec waiting beats; first actual-app baseline accepted Groq in6032ms. No subagents/new service.
+Only Emmichy providerTimeoutMs changes5000→2500 to move to the next provider quickly within the frontend8sec reply budget. Gemini/Groq/Workers order, maxTokens and shared providers stay unchanged. All37 backend tests passed. Branch codex/llm-responsive-20261010; published: PR14 candidate781c67650e72b308fc38d567dc145f623d782640, mergef79214fd07e1cf74da33d277b18ff16ebe81f864, Deploy38013628053 success. Frontend follow-up PR27 published as a7b42827e308bff73f9147da9b935ccfdcbd5051, Pages38014251026 success; all9 changed public files match candidate3b6e769d77d477d8fee434844a4dcac5ca6d8778, release20261010-llm2. Frontend main unchanged. Workerce72b079-8640-4130-9246-0d57d9fa8b89. Frontend session-reference fix passes delayed429/wait/autosave regression; no additional live provider call. Report docs only; final selection is AI priority without a mix quota, DB for waiting/fallback/fan enthusiasm. Live probe returned one200/Groq/3653ms and two502; no extra calls after discovering frontend session-copy race. Shared provider settings unchanged. Frontend ordinary bank turns now keep requesting AI,2sec/5sec waiting beats; first actual-app baseline accepted Groq in6032ms. No subagents/new service.
 
 # 2026-10-10 Emmichy: bounded virtual-player corrections
 

@@ -3,8 +3,15 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Deploy main or run a bounded, unpublished Emmichy quality check'
+        type: choice
+        options: [deploy, quality-check]
+        default: deploy
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main' && inputs.mode != 'quality-check'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,3 +29,24 @@ jobs:
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  quality-check:
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'quality-check'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node --test test/*.test.js
+      - run: node scripts/emmichy-quality-check.mjs
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emmichy-quality-check
+          path: artifacts/emmichy-quality-check.json
+          retention-days: 14
