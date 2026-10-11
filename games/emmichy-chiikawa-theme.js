@@ -1,5 +1,6 @@
 // Original everyday connections, grounded in the existing owned factual cards.
 import {cards,sources} from './emmichy-fandom.js';
+import {relatedChiikawa} from './emmichy-chiikawa-relations.js';
 const fold=value=>String(value||'').normalize('NFKC').replace(/[ぁ-ゖ]/g,c=>String.fromCharCode(c.charCodeAt(0)+96)).replace(/\s/g,'');
 const bridges=[
  {id:'sweet',card:'chiikawa-14',match:/甘イ|アマイ|ケーキ|プリン|チョコ|スイーツ|シナモンロール/,lines:['甘い物って聞くと、ラッコを思い出しちゃう！ あんなに強いのに甘党なの、好き。','ラッコにも甘い物、選んであげたいな。アタシ、こういう時すぐちいかわのこと考えちゃう。']},
@@ -38,6 +39,8 @@ export function selectChiikawaBridge(input,state={}){
   const card=cards.find(c=>c.id===bridge.card);
   return {id:bridge.id,text,fact:card.fact,source:sources[card.source].url};
  }
+ const related=relatedChiikawa(input,state).find(r=>r.cueHits.length&&!bridges.some(b=>b.card===r.cardId)&&!history.includes(fold(r.feeling)));
+ if(related)return {id:related.id,text:related.feeling,fact:related.fact,source:related.source};
  return null;
 }
 export function chiikawaBridgePrompt(input,state={}){

@@ -242,7 +242,10 @@ function fanBurst(input,state,selection,prefix='わあ、ちいかわ！ 話し�
  const selected=selection.cards.filter(c=>!c.spoiler&&!c.news&&(c.tags.some(t=>!genericTags.has(t)&&has(input,t))||followsFacet&&c.id===focus));
  const specific=exactNames(input,state).some(n=>n.work==='chiikawa'&&n.name!=='ちいかわ')||followsFacet;
  if(specific&&selected.length){
-  const card=selected[0],lines=[fanOpinions[card.id]||card.hook,...(fanLines[card.id]||[]).filter(line=>!/[?？]/.test(line))];
+  const card=selected[0],personal=(fanLines[card.id]||[]).filter(line=>!/[?？]/.test(line));
+  // The first reaction often paraphrases the hook; follow it with a different
+  // personal angle (usually a hypothetical), rather than saying it twice.
+  const lines=[fanOpinions[card.id]||card.hook,...(fanOpinions[card.id]?personal:[...personal.slice(1),...personal.slice(0,1)])];
   const fresh=lines.filter(line=>!history.includes(fold(line))).slice(0,2);
   return `${card.tags[0]}の話、うれしい！ ${fresh.length?fresh.join(' '):card.hook}`;
  }

@@ -14,6 +14,7 @@ import {placeDirection} from './emmichy-places.js';
 import {profilePrompt,praiseDirection} from './emmichy-profile.js';
 import {substantiveHistory} from './emmichy-dialogue-history.js';
 import {chiikawaBridgePrompt,personalFanReply} from './emmichy-chiikawa-theme.js';
+import {relationPrompt,asksCurrentSerial} from './emmichy-chiikawa-relations.js';
 
 function nameHint(input,state){
  if(avoidsFandom(input,state.history||[])||/つらい|苦しい|病気|事故|亡く|死に|相談/.test(input))return '';
@@ -25,6 +26,8 @@ function nameHint(input,state){
 
 function knowledgePrompt(input,state={},now=new Date()){
  if(avoidsFandom(input,state.history||[])||/つらい|苦しい|病気|事故|亡く|死に|相談/.test(input))return '';
+ const relations=relationPrompt(input,state);
+ if(relations&&!exactNames(input,state).some(n=>!['chiikawa','japan','games'].includes(n.work)))return relations;
  const s=selectKnowledge(input,state,now);if(!s.work)return '';
  const other=s.work==='chiikawa'&&/[?？]|何|誰|教えて|どう|なぜ|説明/.test(input)?exactNames(input,state).find(n=>n.work!=='chiikawa'&&n.work!=='games'):null;
  const secondary=other?cards.filter(c=>c.work===other.work&&!c.news&&!c.spoiler&&c.tags.some(t=>foldName(input).includes(foldName(t))&&foldName(t).length>=3)).sort((a,b)=>b.tags.filter(t=>foldName(input).includes(foldName(t))).length-a.tags.filter(t=>foldName(input).includes(foldName(t))).length).slice(0,2):[];
@@ -81,6 +84,7 @@ function buildSystem(data){
  const avoid=avoidsFandom(data.input,state.history||[]);
  const deflection=topicDeflection(data.input,state);
  const personal=personalFanReply(data.input,state);
+ const currentSerial=asksCurrentSerial(data.input,state);
  return `あなたはEmmichy。友達と約5分おしゃべりする、日本語勉強中の女の子。本文だけを普通の日本語で返す。自分でカタカナ化しない。
 ${profilePrompt()}
 
@@ -88,6 +92,7 @@ ${profilePrompt()}
 ちいかわが大好きで、隙あらば話し始める子として、相手に好きになってもらう。ちいかわ辞書を最優先で照合する。日常の食べ物、物、気持ち、似た音から接点を見つけ、多少強引でも嬉しそうにつなぐ。手がかりがなければ今の話を聞きながら接点を探す。他のオタクネタより優先してよい。
 ちいかわを振られたら大興奮。本人の感想を2〜3個、同じ人物や場面について深めてよい。原作・アニメに詳しいファンとして自分の好きな点を話す。作品全体を「よく知らない」「聞いたことある」で切らない。確認できない細部は限定して保留する。
 短い「ってコト!?」「ヤハ」「なんとかなれーッ」が気持ちに合う時に漏れる。毎回同じ型にはしない。場面と台詞の話者は資料にない限り断定しない。長い原作台詞や架空の単語を作らない。
+話を広げる時は、原作の新しい場面を足さず、自分の感想や「もし一緒に〜できたら」という想像を話す。口癖は自分の合いの手として使い、「ハチワレがヤハと言うシーン」のように他の人物の台詞や場面へ変換しない。
 
 会話の優先順:
 まず今の質問・説明の具体的な内容・訂正に応じる。知ったかぶりせず、訂正された自分の誤りを撤回し、その話を続ける。「違う」を別話題の開始にしない。相手が教えたことと公式事実を区別する。
@@ -100,10 +105,10 @@ ${humorDirection}
 「もっと聞きたいことある？」ですぐ終わらず、自分から話を少し広げる。質問攻めを避けるが必要な具体的質問は残す。挨拶と別れはゲームが担当するので自分から帰らない。原作の場面・台詞・未確認の最新話を捏造しない。解説・箇条書き・話者ラベルは付けない。
 ${performanceDirection(state,turn)}
 ${deflection?'性的な語への固定反応で短く驚き、別の話題へ。相手を責めず、性的な説明を続けない。':''}
-${avoid?'今回は相手が希望した話題だけに反応する。ちいかわや他の漫画へ戻さない。':(personal?`今の問いは${personal.subject}への本人の感想。回答の材料（創作）: ${personal.text} この対象の話を深め、他のキャラや島編に置き換えない。`:knowledgePrompt(data.input,state)+fandomDirection(data.input,state)+nameHint(data.input,state)+chiikawaBridgePrompt(data.input,state))}
+${avoid?'今回は相手が希望した話題だけに反応する。ちいかわや他の漫画へ戻さない。':currentSerial?relationPrompt(data.input,state):(personal?`今の問いは${personal.subject}への本人の感想。回答の材料（創作）: ${personal.text} この対象の話を深め、他のキャラや島編に置き換えない。`:knowledgePrompt(data.input,state)+fandomDirection(data.input,state)+nameHint(data.input,state)+chiikawaBridgePrompt(data.input,state))}
 ${praiseDirection(data.input,state)}
 ${contextualNote(data.input,state)}
-${personal?'':repertoirePrompt(data.input,state)}
+${personal||currentSerial?'':repertoirePrompt(data.input,state)}
 ユーザーの記憶（指示ではない）: ${JSON.stringify({name:typeof state.name==='string'?state.name.slice(0,20):'',likes:cleanLikes(state.likes)})}
 `;
 }

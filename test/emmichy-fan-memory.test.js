@@ -30,7 +30,7 @@ test('persistent topic cues reach the prompt after transcript eviction; correcti
  assert.match(correction[0].content,/手を回して水流を起こす/);assert.match(correction[0].content,/自分の誤りを撤回/);
  const latest=await game.buildMessages({input:'ちいかわの最新の細かい話は？',state:{knowledge}});
  assert.equal(game.validate(original,{messages:latest}),original);
- assert.match(latest[0].content,/未確認の最新話や日時だけは対象を限定して保留/);
+ assert.match(latest[0].content,/最新本文を取得できていない/);assert.match(latest[0].content,/最近の結末は断言せず/);
  const ordinary=await game.buildMessages({input:'今日は音楽の話をしよう',state});assert.doesNotMatch(ordinary[0].content,/今はちいかわの話/);
  const refused=await game.buildMessages({input:'その話の続き',state:{knowledge,history:[{role:'user',text:'ちいかわ以外の話にしよう'}]}});
  assert.doesNotMatch(refused[0].content,/今はちいかわの話/);
