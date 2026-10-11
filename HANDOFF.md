@@ -1,5 +1,7 @@
 # 2026-10-12 Emmichy: focused Chiikawa candidate (unpublished)
 
+Code candidate7a9df963df168cb43ff4f4ea2621367d0106b629, draft PR15; paired frontend7d975cbf1430d7d21feb01476dc85dd43589b3db, draft PR28. Both branches pushed, neither merged. This report-only follow-up records identities without runtime changes.
+
 Branch codex/chiikawa-dialogue-20261011, main remains f79214fd07e1cf74da33d277b18ff16ebe81f864. Good generated text stays intact at the relay; browser owns final content repair. Return truthful source metadata with backward-compatible validator results. Substantive delivered history20/6000 replaces filler-heavy model context. Canonical persona and relevant sourced relations25 are synced from Emmichy, with raw Japanese input and uncertain current serial explicitly scoped. No paid service.
 
 Emmichy only: Groq→Gemini→Workers; requestBudgetMs7200 including buildMessages/lookup, each provider maximum3500ms, stop on429. Other games retain their settings. 51 tests pass. Shared index supports provenance and per-game budgets; source ownership and request timing covered by targeted tests.
