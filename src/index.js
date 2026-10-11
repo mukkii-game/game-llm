@@ -26,19 +26,28 @@ function json(body, status, origin) {
 }
 
 // 成功するまで順番に試す。検証で落ちた返事も「失敗」として次へ進む。
-export async function runChain(env, game, messages, log) {
+export async function runChain(env, game, messages, log, { startedAt } = {}) {
   const order = (env.PROVIDERS ? env.PROVIDERS.split(',') : game.providers ?? DEFAULT_ORDER).map((s) => s.trim());
   const opt = { temperature: game.temperature ?? 0.9, maxTokens: game.maxTokens ?? 200, timeoutMs: game.providerTimeoutMs ?? 9000 };
+  const deadline = game.requestBudgetMs == null ? null : (startedAt ?? Date.now()) + game.requestBudgetMs;
   for (const name of order) {
     const call = PROVIDERS[name];
     if (!call) continue;
     const t0 = Date.now();
+    const remaining = deadline === null ? opt.timeoutMs : deadline - t0;
+    if (deadline !== null && remaining <= 0) break;
+    const attemptOpt = deadline === null ? opt : { ...opt, timeoutMs: Math.min(opt.timeoutMs, remaining) };
     try {
-      const text = game.validate(await call(env, messages, opt), {messages});
-      log({ provider: name, ok: Boolean(text), reason: text ? '' : 'rejected', ms: Date.now() - t0 });
-      if (text) return { text, provider: name };
+      const validated = game.validate(await call(env, messages, attemptOpt), {messages});
+      const structured = validated !== null && typeof validated === 'object';
+      const text = structured ? validated.text : validated;
+      const source = structured && ['llm', 'mixed', 'authored'].includes(validated.source) ? validated.source : 'llm';
+      const accepted = typeof text === 'string' && Boolean(text);
+      log({ provider: name, source, ok: accepted, reason: structured && validated.reason ? String(validated.reason).slice(0, 40) : accepted ? '' : 'rejected', ms: Date.now() - t0 });
+      if (accepted) return { text, provider: name, ...(structured || game.reportSource === true ? { source } : {}) };
     } catch (e) {
-      log({ provider: name, ok: false, reason: String(e.message || e).slice(0, 40), ms: Date.now() - t0 });
+      log({ provider: name, source: 'llm', ok: false, reason: String(e.message || e).slice(0, 40), ms: Date.now() - t0 });
+      if (game.stopOnRateLimit === true && e.message === 'http-429') return { error: 'rate-limited', provider: name };
     }
   }
   return null;
@@ -79,11 +88,14 @@ export default {
     const max = game.maxInput ?? 200;
     if (typeof data.input !== 'string' || !data.input.trim() || data.input.length > max) return json({ error: 'bad-input' }, 400, origin);
 
+    // Emmichy's request budget includes its potentially slow context lookup.
+    const startedAt = m[1] === 'emmichy' && game.requestBudgetMs != null ? Date.now() : undefined;
     const messages = await game.buildMessages(data);
-    // 計測: プレイヤーの文章は記録しない。作品名・呼び先・成否・時間だけ。
+    // 計測: プレイヤーの文章は記録しない。作品名・呼び先・返事の出所・成否・理由・時間だけ。
     const log = (o) => console.log(JSON.stringify({ game: m[1], ...o }));
-    const result = await runChain(env, game, messages, log);
+    const result = await runChain(env, game, messages, log, { startedAt });
     if (!result) return json({ error: 'unavailable' }, 502, origin);
+    if (result.error === 'rate-limited') return json(result, 429, origin);
     return json(result, 200, origin);
   },
 };
