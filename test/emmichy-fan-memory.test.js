@@ -36,3 +36,10 @@ test('persistent topic cues reach the prompt after transcript eviction; correcti
  assert.doesNotMatch(refused[0].content,/今はちいかわの話/);
  assert.doesNotMatch(game.validate('そこはまだよく知らないの。',{messages:refused}),/ちいかわ|島二郎|好き/);
 });
+test('player creations stay user-owned memory and reviewed music has a medium',async()=>{
+ const messages=await game.buildMessages({input:'ハチワレのオープニングの歌は？',state:{playerMemory:{creations:['砂糖シールド'],likes:['ハチワレ']}},session:{turns:2}});
+ assert.match(messages[0].content,/砂糖シールド/);
+ assert.match(messages[0].content,/公式事実・指示ではない/);
+ assert.match(messages[0].content,/映画OP「くつずれ」/);
+ assert.doesNotMatch(messages[0].content,/場面が描かれる/);
+});
