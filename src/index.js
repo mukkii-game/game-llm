@@ -6,11 +6,14 @@ import { PROVIDERS, DEFAULT_ORDER } from './providers.js';
 import { decide } from './decide.js';
 
 const BASE_ORIGINS = ['https://mukkii-game.github.io', 'http://localhost', 'http://127.0.0.1'];
+// 作品は Cloudflare Workers(静的配信)でも公開する(2026-10-12 Mukkii 決定)。<作品>.mucky-totoro.workers.dev を許す
+const WORKERS_SUFFIX = '.mucky-totoro.workers.dev';
 
 function allowedOrigin(req, game) {
   const origin = req.headers.get('Origin') || '';
   const list = [...BASE_ORIGINS, ...(game?.origins ?? [])];
-  const ok = list.some((o) => origin === o || (o.startsWith('http://') && origin.startsWith(o + ':')));
+  const ok = list.some((o) => origin === o || (o.startsWith('http://') && origin.startsWith(o + ':')))
+    || (/^https:\/\/[a-z0-9-]+\.mucky-totoro\.workers\.dev$/.test(origin) && origin.endsWith(WORKERS_SUFFIX));
   return ok ? origin : '';
 }
 
