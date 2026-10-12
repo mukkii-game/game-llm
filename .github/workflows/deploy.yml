@@ -7,11 +7,11 @@ on:
       mode:
         description: 'Deploy main or run a bounded, unpublished Emmichy quality check'
         type: choice
-        options: [deploy, quality-check]
+        options: [deploy, quality-check, model-comparison]
         default: deploy
 jobs:
   deploy:
-    if: github.ref == 'refs/heads/main' && inputs.mode != 'quality-check'
+    if: github.ref == 'refs/heads/main' && inputs.mode != 'quality-check' && inputs.mode != 'model-comparison'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,4 +49,25 @@ jobs:
         with:
           name: emmichy-quality-check
           path: artifacts/emmichy-quality-check.json
+          retention-days: 14
+  model-comparison:
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'model-comparison'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node --test test/*.test.js
+      - run: node scripts/emmichy-model-comparison.mjs
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emmichy-model-comparison
+          path: artifacts/emmichy-model-comparison.json
           retention-days: 14
