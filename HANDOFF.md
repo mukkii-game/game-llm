@@ -1,4 +1,10 @@
-# 2026-10-12 Emmichy: focused Chiikawa candidate (unpublished)
+# 2026-10-12 Emmichy: Chiikawa pilot published with user permission
+
+User authorized paired publication for their playtest. PR15 merged as636ac2d2013ff8a7f45daf237c9a6a13d9805258; Deploy38170890200 success including51 tests; Worker8e5a629c-ed5b-4d8e-9a86-def54ae6feeb. Health OK. Frontend PR28 merged into pilot as8be7c77d166b6ed8bd6b2d8e7e78a0c8f270e5ff, Pages38170960518 success, runtime20261012-chii1; all25 changed public files match candidate. Frontend main unchanged. Emmichy/docs/public-chiikawa-pilot-20261012.json records verification. No new LLM calls after prior429; final live generation/human appeal left for user playtest. This follow-up records publication only; no new service or Relay.
+
+---
+
+# Previous checkpoint — 2026-10-12 Emmichy: focused Chiikawa candidate (unpublished)
 
 Code candidate7a9df963df168cb43ff4f4ea2621367d0106b629, draft PR15; paired frontend7d975cbf1430d7d21feb01476dc85dd43589b3db, draft PR28. Both branches pushed, neither merged. This report-only follow-up records identities without runtime changes.
 
