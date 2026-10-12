@@ -31,7 +31,7 @@ export function personalFanReply(input,state={}){
 export function selectChiikawaBridge(input,state={}){
  const t=fold(input);
  if(/ツライ|苦シ|病気|事故|亡ク|死ニ|相談|嫌イ|キライ|苦手|ヤメ|イガイ|以外|バカリ|違ウ|チガウ|訂正/.test(t))return null;
- const history=(state.dialogue||state.history||[]).filter(h=>h.role==='enny').slice(-8).map(h=>fold(h.text)).join('');
+ const history=(state.dialogue||state.history||[]).filter(h=>h.role==='enny').slice(-8).map(h=>fold(h.text)).concat((state.playerMemory?.recentReplies||[]).slice(-12).map(fold)).join('');
  for(const bridge of bridges){
   if(!bridge.match.test(t))continue;
   const text=bridge.lines.find(line=>!history.includes(fold(line)));
