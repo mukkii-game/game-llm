@@ -13,6 +13,7 @@ const distinct=matches=>[...new Map(matches.map(m=>[m.row.id,m])).values()];
 const ownedNames=new Map([...nameData,...placeNames,...gameNames.map(name=>({id:`steam:${name}`,name,reading:name,work:'games'}))].map(row=>[row.id,row]));
 export const nameFromId=id=>ownedNames.get(id)||null;
 function scan(value){const input=foldName(value),found=[];for(let i=0;i<input.length;i++){let node=trie;for(let j=i;j<input.length;j++){node=node.get(input[j]);if(!node)break;for(const m of node.get('')||[]){
+ if(m.key==='キュウ'&&/[0-9一二三四五六七八九十]/.test(input[i-1]||''))continue; // A grade/count is not Hunter's character.
  if(/^[a-z0-9]+$/.test(m.key)&&m.key.length<=5&&!new RegExp(`\\b${m.key}\\b`,'i').test(String(value)))continue;
  if(m.row.work==='japan'&&m.key.length<4&&!String(value).includes(m.row.name)&&input!==m.key&&!/旅行|観光|温泉|空港|地名|県|市/.test(value))continue;
  if(m.row.category==='context-item'&&m.key.length<=3&&input!==m.key&&!String(value).normalize('NFKC').includes(m.alias))continue;

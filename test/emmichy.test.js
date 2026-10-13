@@ -182,3 +182,8 @@ test('conversation agreements and owned utterance recall constrain the server pr
  const fan=game.buildMessages({input:'シーサー、さっき好きって言ったけど、どうして読み返すの？',state:{}})[0].content;
  assert.match(fan,/shisa-reread/);assert.match(fan,/もう一回、その気持ち/);
 });
+
+test('a numeric grade never injects Hunter Kyuu into the ongoing Chiikawa prompt',()=>{
+ const system=game.buildMessages({input:'5キュウ オチタ トキ',state:{knowledge:{work:'chiikawa'},history:[{role:'user',text:'草むしり検定の話'}]}})[0].content;
+ assert.doesNotMatch(system,/"name":"キュウ"|"work":"hunter"/);
+});
