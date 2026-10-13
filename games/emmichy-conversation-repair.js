@@ -40,7 +40,7 @@ export function updateDialogueControl(value,input){
 }
 export function conversationRepair(input,state={}){
  const t=foldRepair(input),c=cleanDialogueControl(state.dialogueControl),intent=feedbackIntent(input);
- const history=state.dialogue||state.history||[],prior=history.filter(h=>h.role==='enny').slice(-8).map(h=>h.text).join(' ');
+ const history=[...(state.dialogue||state.history||[]),...(state.heardHistory||[])],prior=history.filter(h=>h.role==='enny').slice(-8).map(h=>h.text).join(' ');
  const clause=t.split(/[。!！]/).at(-1)||t;
  const entry=words.find(w=>w.match.test(clause));
  const asksMeaning=entry&&(/意味|イミ|知ラナイ|シラナイ|知ッテル|シッテル|ッテ何|ッテナニ|トハ何|トハナニ/.test(clause)||clause.replace(/[?？]/g,'')===foldRepair(entry.word)||!clause.replace(entry.match,'').replace(/[?？]/g,''));

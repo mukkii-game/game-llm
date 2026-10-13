@@ -52,6 +52,7 @@ export function complimentReaction(raw,state={}){
  const named=exactNames(input,state),ordinary=affection?ordinaryFavourites.find(([name])=>folded.includes(name)&&new RegExp(`${name}(?:ガ|ヲ|ハ)?(?:大好キ|ダイスキ|好キ|スキ|愛シテ|アイシテ|好ミ|コノミ)`).test(folded)):null;
  const target=named.find(n=>n.work==='chiikawa')||named[0]||(ordinary?{name:ordinary[0],reading:ordinary[1],work:'everyday'}:null);
  if(affection&&target&&!selfMention(input))return {gesture:`${target.reading}、${word}!?`,affection:true,target,text:null,thanks:null};
+ if(affection&&target&&/(?:エミチ[イィ]|アナタ|君)(?:ハ|モ|ノ好ミハ)[?？]$/.test(folded))return null;
  // Bare praise is addressed to her. Explicit characters/third people retain their subject.
  if(!selfMention(input)&&(named.length||/友達|彼女|彼氏|あの子|その子/.test(input)))return null;
  if(!affection&&!selfMention(input)&&/私|僕|俺|ワタシ|ボク|オレ/.test(input))return null;
