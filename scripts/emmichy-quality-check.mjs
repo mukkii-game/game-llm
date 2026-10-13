@@ -5,6 +5,7 @@ import game from '../games/emmichy.js';
 import {runChain} from '../src/index.js';
 import {PROVIDERS} from '../src/providers.js';
 import {selectKnowledge} from '../games/emmichy-fandom.js';
+import {specialistPacket,noteSpecialistDelivery} from '../games/emmichy-specialist.js';
 const env={GROQ_API_KEY:process.env.GROQ_API_KEY,GEMINI_API_KEY:process.env.GEMINI_API_KEY,
  GROQ_MODEL:'openai/gpt-oss-120b',GEMINI_MODEL:'gemini-flash-latest'};
 let calls=0,rateLimited=false;
@@ -29,7 +30,8 @@ for(const input of ['シーサーって頑張り屋なところが好き。え�
  evidence.turns.push({input,systemCharacters:messages[0].content.length,history:messages.slice(1,-1),wallMs:Date.now()-start,result,attempts:logs});
  if(result?.error==='rate-limited'||!result?.text)break;
  state.history.push({role:'user',text:input},{role:'enny',text:result.text});
- state.knowledge=selectKnowledge(input,state).memory;state.turn++;
+  state.knowledge=selectKnowledge(input,state).memory;state.turn++;
+  state.specialist=noteSpecialistDelivery(specialistPacket(input,state).memory,result.text);
 }
 evidence.calls=calls;evidence.rateLimited=rateLimited;
 await fs.mkdir('artifacts',{recursive:true});
