@@ -12,9 +12,15 @@ const bridges=[
 // Personal opinions, not additional canon scenes. Basic character framing:
 // https://apps.apple.com/jp/iphone/story/id1776526436
 export function personalFanReply(input,state={}){
- const t=fold(input),chii=/チイカワ|ハチワレ/.test(t)||state.knowledge?.work==='chiikawa';
+ const t=fold(input),chii=/チイカワ|ハチワレ|シーサー|ウサギ|モモンガ/.test(t)||state.knowledge?.work==='chiikawa';
  if(!chii||/嫌イ|キライ|病気|相談|事故|死ニ|亡ク/.test(t))return null;
- if(/(?:誰|ダレ).*(?:好キ|スキ)|(?:イチバン|一番).*(?:誰|ダレ)|推シ.*(?:誰|ダレ)/.test(t))
+ const question=t.split(/[。!！]/).filter(Boolean).at(-1)||t;
+ if(/(?:応援|オウエン).*(?:好キ|スキ)|(?:好キ|スキ).*(?:応援|オウエン)/.test(question))return {subject:'supporting',text:'うん、好き！ 頑張ってる人を見ると、あと少しって一緒に力が入っちゃう。シーサーにも、そういう気持ちになるの。'};
+ if(/シーサー/.test(t)&&/読ミ返|読み返|読ミ直/.test(question))return {subject:'shisa-reread',text:'シーサーが頑張るところを見ると、アタシも少し頑張ろってなるの。もう一回、その気持ちになりたくて読み返すの。'};
+ if(/シーサー/.test(t)&&/ドコガ好キ|ドコガスキ|好キナトコロ|ガンバリ屋/.test(question))return {subject:'shisa',text:'シーサーは、働きたい場所のために頑張るところが好き。資格を取るまであきらめないところ、アタシも応援したくなる。'};
+ if(/ハチワレ/.test(t)&&/(?:ゴハン|ご飯|料理|食ベ)/.test(t)&&/ドウシテ|ナゼ|何デ|ナンデ/.test(question))return {subject:'hachiware-meal-wish',text:'もし一緒に食べられたら、ってアタシの想像だよ。失敗しても、作ってくれた気持ちがうれしいから。一緒に次はどう作ろうって考えたいな。'};
+ if(/ハチワレ/.test(t)&&/ドコガ好キ|ドコガスキ|好キナトコロ/.test(t))return {subject:'hachiware',text:'ハチワレは、友達のことを気にかけるところが好き。写真で小さい思い出を残すのも、いいよね。アタシまで大事にしたくなる。'};
+ if(/(?:誰|ダレ)(?:ガ|ヲ|ハ)?(?:一番|イチバン)?(?:好キ|スキ)|(?:イチバン|一番).*(?:誰|ダレ)|推シ.*(?:誰|ダレ)/.test(question))
   return {subject:'favourite',text:'アタシ、ハチワレの気遣いに弱いの。写真で小さい思い出を残すところも、大好き！ 一番って聞かれると、みんな浮かんで迷っちゃう。'};
  if(/(?:エミチ[ィイー]|アナタ|君).{0,16}プリン.{0,6}(?:好キ|スキ)/.test(t))
   return {subject:'pudding',text:'アタシもプリン好き！ 一緒に食べながらちいかわの話、したいな。小さいうれしいこと、二つになるね。'};
