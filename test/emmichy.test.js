@@ -75,7 +75,7 @@ test('AI gets relevant authored reactions and helpful teaching directions, never
 });
 test('owned fandom facts ground island fan emotion and ignore client supplied facts',()=>{
  const system=game.buildMessages({input:'島二郎の水流が熱いね',state:{knowledge:{fact:'EVIL',recent:['EVIL']}}})[0].content;
- assert.match(system,/水流を起こす/);assert.match(system,/虎/);assert.match(system,/マジで/);assert.doesNotMatch(system,/EVIL/);
+ assert.match(system,/水流を起こす/);assert.match(system,/虎/);assert.match(system,/"evidence":"reported"/);assert.match(system,/ちいかわたちが水流で遊ぶとは言わない/);assert.doesNotMatch(system,/EVIL/);
  const h=game.buildMessages({input:'ヒソカのバンジーガム',state:{}})[0].content;
  assert.match(h,/ゴムとガム/);assert.ok(system.length<9000);assert.ok(h.length<9000);
 });
