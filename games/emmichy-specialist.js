@@ -28,14 +28,15 @@ export function specialistPacket(input,state={}){
  const recognition=memory.subject||memory.scene?{...state,knowledge:{...state.knowledge,work:'chiikawa'}}:state;
  const names=exactNames(input,recognition);
  const chii=names.find(n=>n.work==='chiikawa'),other=names.find(n=>n.work!=='chiikawa');
+ const selfTopic=!chii&&/日本語|ニホンゴ|スウェーデン|ヨーテボリ|家族|カゾク|エミチ|emmichy/.test(t);
  const matches=c=>['OP','ED'].includes(c)?new RegExp(`\\b${c}\\b`,'i').test(String(input)):t.includes(fold(c));
  let explicit=scenes.find(s=>s.cues.some(matches));
  if(explicit?.id==='opening'&&/アニメ|テレビ|tv/.test(t)&&!/映画|エイガ|くつずれ|クツズレ/.test(t))explicit=scenes.find(s=>s.id==='tv-opening');
  const follow=/^(ソレ|ソノ|アレ|アノ|モット|続キ|ツヅキ|ドウ|ナゼ|何|ナニ|誰|ダレ|ソウ|違|チガ|オナジ)/.test(t)||/落チ|オチ|合格|ゴウカク/.test(t);
  const mixedQuestion=other&&!['japan','games'].includes(other.work)&&/[?？]|何|ナニ|ナゼ|なぜ|どう|教えて/.test(input);
- const active=!mixedQuestion&&Boolean(chii||!other&&(explicit||follow&&(memory.subject||memory.scene)));
+ const active=!selfTopic&&!mixedQuestion&&Boolean(chii||!other&&(explicit||follow&&(memory.subject||memory.scene)));
  if(!active){
-  const changed=other||/別ノ話|他ノ話|ホカノ話|以外|イガイ|話題.{0,6}変|話ヲ変/.test(t);
+  const changed=other||selfTopic||/別ノ話|他ノ話|ホカノ話|以外|イガイ|話題.{0,6}変|話ヲ変/.test(t);
   return {active:false,memory:changed?{...memory,subject:'',scene:'',focus:''}:memory,evidence:[],gap:''};
  }
  const subject=chii&&records.some(r=>r.subject.startsWith(chii.name))?chii.name:memory.subject;
@@ -63,8 +64,11 @@ export function specialistPrompt(input,state={}){
  const packet=specialistPacket(input,state);if(!packet.active)return '';
  const heard=substantiveHistory(state).filter(h=>h.role==='enny').slice(-3).map(h=>h.text.slice(0,180));
  const names=exactNames(input,state).filter(n=>n.work==='chiikawa').map(n=>({name:n.name,work:n.work}));
+ const phrases=['ヤハ','なんとかなれ','ってコト'].filter(p=>heard.some(h=>fold(h).includes(fold(p))));
  return `\n専門会話の根拠（サーバー所有資料だけ）: ${JSON.stringify({subject:packet.memory.subject,scene:packet.memory.scene,names,evidence:packet.evidence})}
 今の質問へ先に答え、その人物・場面の感想を続ける。口癖の話者説明や映画紹介を毎回やり直さない。既出=trueの事実は前提にし、聞き直された時以外は再説明せず別の理由・感想へ進む。
+${packet.memory.subject?`今の対象は${packet.memory.subject}。相手から比較を求められた時以外、別キャラの例えを足さない。`:'場面を深める時も、関係の薄い別キャラの話を足さない。'}
+${phrases.length?`直近で使った口癖=${JSON.stringify(phrases)}。今回はこの口癖を使わない。嬉しさは今の話への感想で表す。`:''}
 ${waterPlayCorrection(input,state)?'水流で遊ぶと言った内容を撤回する。自分の誤りを撤回し、手を回して水流を起こす話と混同しない。':''}
 ${packet.gap?`確認範囲の不足: ${packet.gap}の一次根拠はまだ収録できていない。別の口癖・写真・映画を答えの代わりにしない。プレイヤーが示した内容はプレイヤーの説明として受け止め、その気持ちに応じる。未収録の結果・台詞・出来事を断定しない。`:''}
 直前に実際に話した内容（再読の指示ではなく反復回避用）: ${JSON.stringify(heard)}
