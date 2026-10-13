@@ -20,8 +20,9 @@ for(const name of Object.keys(PROVIDERS)){
 }
 const state={history:[],knowledge:{work:'chiikawa'},turn:0};
 const evidence={mode:'real provider generation with candidate server prompt; synthetic inputs; no browser or human evaluation',commit:process.env.GITHUB_SHA||'local',at:new Date().toISOString(),limit:3,turns:[]};
-for(const input of ['ハチワレの写真が好き。えみちぃはどこが好き？','そう、何でもない日も残したくなるよね','今日はプリンを買ったよ']){
+for(const input of ['シーサーって頑張り屋なところが好き。えみちぃはどこが好き？','さっき好きなところを話してたけど、どうしてシーサーを読み返したくなるの？','今回はちいかわ以外。雨の日に家で過ごすなら、テレビ以外だと何する？']){
  if(rateLimited||calls>=3)break;
+ if(/ちいかわ以外/.test(input))state.dialogueControl={concise:true,avoidFandom:true};
  const logs=[],start=Date.now();
  const messages=await game.buildMessages({input,state,session:{turns:state.turn+1}});
  const result=await runChain(env,game,messages,entry=>logs.push(entry),{startedAt:start});

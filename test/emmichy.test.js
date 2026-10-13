@@ -118,12 +118,13 @@ test('self aliases are the same person and personal answers remain grounded',asy
 
 test('sexual vocabulary redirects without a fandom lookup and language learning has concrete examples',async()=>{
  const m=await game.buildMessages({input:'エミチィ、セックスって？',state:{}});
- assert.match(m[0].content,/固定反応.*別の話題/);assert.match(m[0].content,/長音・小さいっ/);assert.match(m[0].content,/運行.*うんこ/);
+ assert.match(m[0].content,/固定反応.*別の話題/);assert.match(m[0].content,/長音・促音/);assert.doesNotMatch(m[0].content,/運行.*うんこ/,'unrelated language jokes are not injected every turn');
+ const language=game.buildMessages({input:'日本語勉強してるの？',state:{}})[0].content;assert.match(language,/日本語を勉強してるよ/);
 });
 
 test('Chiikawa expertise is firsthand while ordinary Japanese life stays hearsay',async()=>{
  const m=await game.buildMessages({input:'モモンガが好き',state:{}});
- assert.match(m[0].content,/原作は全部読んでいて、アニメも見ている/);assert.match(m[0].content,/自分の感想も/);assert.match(m[0].content,/耳知識とは区別/);assert.match(m[0].content,/未確認の場面や台詞.*作って断定しない/);
+ assert.match(m[0].content,/原作は全部読んでいて、アニメも見ている/);assert.match(m[0].content,/自分の感想も/);assert.match(m[0].content,/耳知識とは区別/);assert.match(m[0].content,/未確認の場面・台詞.*作らない/);
 });
 
 test('a substantive 86-character single-Hachiware reply survives validation untouched',()=>{
@@ -172,4 +173,12 @@ test('ordinary system prompts stay below 4500 characters',()=>{
 
 test('structural invalid output and rejected player joke variants remain rejected',()=>{
  for(const value of [null,123,'これは英語のASSISTANTとしての解説だよ。','半額王、今日もプリンを買いに行こう！','ハンガク オウ、またプリンの時間だね。','あ'.repeat(181)])assert.equal(game.validate(value),null);
+});
+
+test('conversation agreements and owned utterance recall constrain the server prompt',()=>{
+ const m=game.buildMessages({input:'どんな雨の匂い？',state:{dialogueControl:{concise:true,avoidFandom:true,suppressed:['jp:long-vowel','EVIL']},history:[{role:'enny',text:'雨の匂い、わかる。'}]}});
+ assert.match(m[0].content,/一文を短く/);assert.match(m[0].content,/漫画への連想を休む/);assert.match(m[0].content,/自分の発言を「知らない」で切らない/);assert.doesNotMatch(m[0].content,/EVIL/);
+ assert.equal(m[1].content,'雨の匂い、わかる。');
+ const fan=game.buildMessages({input:'シーサー、さっき好きって言ったけど、どうして読み返すの？',state:{}})[0].content;
+ assert.match(fan,/shisa-reread/);assert.match(fan,/もう一回、その気持ち/);
 });
