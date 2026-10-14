@@ -12,6 +12,22 @@ test('Groq が成功すればそれを返す', async () => {
   const r = await runChain({ GROQ_API_KEY: 'k' }, game, [], () => {});
   assert.deepEqual(r, { text: 'ヤハ', provider: 'groq' });
 });
+test('Emmichy enforces its owned specialist schema in the provider request, only for specialist turns',async()=>{
+ const {GAMES}=await import('../games/index.js'),original=globalThis.fetch,bodies=[];
+ try{
+  globalThis.fetch=async(_url,options)=>{
+   const body=JSON.parse(options.body);bodies.push(body);
+   return ok(body.response_format?JSON.stringify({beats:[{fact:'exam:result',say:null,ask:null},{fact:null,say:'アタシ、友達のお祝いも大事にしたいな。',ask:null}]}):'雨の匂い、アタシも好き。空気が少し変わる感じがするの。');
+  };
+  const input='草むしり検定の最初の結果は？',messages=await GAMES.emmichy.buildMessages({input,state:{}});
+  const result=await runChain({GROQ_API_KEY:'test',PROVIDERS:'groq'},GAMES.emmichy,messages,()=>{});
+  assert.match(result.text,/ハチワレ.*合格/);assert.match(result.text,/友達のお祝い/);assert.equal(result.source,'mixed');
+  const ids=bodies[0].response_format.json_schema.schema.properties.beats.items.properties.fact.enum;
+  assert.ok(ids.includes('exam:result'));assert.ok(!ids.includes('reviewed:usagi:yaha'));
+  const ordinary=await GAMES.emmichy.buildMessages({input:'今日は雨の匂いがした',state:{}});
+  await runChain({GROQ_API_KEY:'test',PROVIDERS:'groq'},GAMES.emmichy,ordinary,()=>{});assert.equal(bodies[1].response_format,undefined);
+ }finally{globalThis.fetch=original;}
+});
 
 test('Groq が 429 なら Gemini へ', async () => {
   globalThis.fetch = async (u) => (String(u).includes('groq') ? new Response('', { status: 429 }) : gem('ウラ'));

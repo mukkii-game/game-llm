@@ -32,6 +32,8 @@ function json(body, status, origin) {
 export async function runChain(env, game, messages, log, { startedAt } = {}) {
   const order = (env.PROVIDERS ? env.PROVIDERS.split(',') : game.providers ?? DEFAULT_ORDER).map((s) => s.trim());
   const opt = { temperature: game.temperature ?? 0.9, maxTokens: game.maxTokens ?? 200, timeoutMs: game.providerTimeoutMs ?? 9000 };
+  const outputSchema = typeof game.outputSchema === 'function' ? game.outputSchema(messages) : null;
+  if(outputSchema)opt.outputSchema=outputSchema;
   const deadline = game.requestBudgetMs == null ? null : (startedAt ?? Date.now()) + game.requestBudgetMs;
   for (const name of order) {
     const call = PROVIDERS[name];

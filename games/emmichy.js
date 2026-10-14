@@ -20,7 +20,7 @@ import {playerMemoryPrompt} from './emmichy-player-memory.js';
 import {learnerPrompt} from './emmichy-japanese-learner.js';
 import {attributionPrompt} from './emmichy-chiikawa-attribution.js';
 import {specialistPrompt} from './emmichy-specialist.js';
-import {specialistReplyFormat,renderSpecialistReply} from './emmichy-specialist-reply.js';
+import {specialistReplyFormat,renderSpecialistReply,specialistOutputSchema} from './emmichy-specialist-reply.js';
 
 function nameHint(input,state){
  if(avoidsFandom(input,state.history||[])||/つらい|苦しい|病気|事故|亡く|死に|相談/.test(input))return '';
@@ -156,6 +156,7 @@ export default {
   // Recent successful live checks used Groq; avoid a failed first wait before it.
   providers: ['groq', 'gemini', 'workers-ai'],
   temperature: 0.45,
+  outputSchema: specialistOutputSchema,
   buildMessages(data) {
     const history = clampHistory(data.state);
     const messages = [
