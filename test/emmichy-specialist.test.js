@@ -15,3 +15,11 @@ test('a TV-opening question never receives the film-opening fact',async()=>{
  assert.match(m[0].content,/TVアニメのOP（映画のOPとは別）/);
  assert.doesNotMatch(m[0].content,/映画のオープニングテーマは「くつずれ」/);
 });
+test('a structured fact selection is rendered from owned data and cannot change the exam result',async()=>{
+ const messages=await game.buildMessages({input:'草むしり検定5級の結果は？',state:{}});
+ const value=JSON.stringify({beats:[{fact:'exam:result'},{say:'アタシ、友達にも自分にも、優しくしたいな。'}]});
+ const out=game.validate(value,{messages});
+ assert.match(out.text,/ハチワレが合格.*ちいかわは不合格/);assert.match(out.text,/アタシ、友達/);assert.equal(out.source,'mixed');
+ assert.equal(game.validate(JSON.stringify({beats:[{fact:'exam:fake-success'}]}),{messages}),null);
+ assert.equal(game.validate(JSON.stringify({beats:[{fact:'exam:result',text:'二人とも合格'}]}),{messages}),null);
+});

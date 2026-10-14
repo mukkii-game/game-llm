@@ -8,26 +8,27 @@ import {selectKnowledge} from '../games/emmichy-fandom.js';
 import {specialistPacket,noteSpecialistDelivery} from '../games/emmichy-specialist.js';
 const env={GROQ_API_KEY:process.env.GROQ_API_KEY,GEMINI_API_KEY:process.env.GEMINI_API_KEY,
  GROQ_MODEL:'openai/gpt-oss-120b',GEMINI_MODEL:'gemini-flash-latest'};
+const maxCalls=2,rawOutputs=[];
 let calls=0,rateLimited=false;
 for(const name of Object.keys(PROVIDERS)){
  const original=PROVIDERS[name];
  PROVIDERS[name]=async(...args)=>{
-  if(rateLimited||calls>=3)throw Error('probe-budget');
+  if(rateLimited||calls>=maxCalls)throw Error('probe-budget');
   // No remote Workers binding is available or created by this check.
   if(name==='workers-ai')throw Error('no-binding');
   calls++;
-  try{return await original(...args);}catch(error){if(error.message==='http-429')rateLimited=true;throw error;}
+  try{const raw=await original(...args);rawOutputs.push({provider:name,raw:String(raw).slice(0,4000)});return raw;}catch(error){if(error.message==='http-429')rateLimited=true;throw error;}
  };
 }
 const state={history:[],knowledge:{work:'chiikawa'},turn:0};
-const evidence={mode:'real provider generation with candidate server prompt; synthetic inputs; no browser or human evaluation',commit:process.env.GITHUB_SHA||'local',at:new Date().toISOString(),limit:3,turns:[]};
-for(const input of ['シーサーって頑張り屋なところが好き。えみちぃはどこが好き？','さっき好きなところを話してたけど、どうしてシーサーを読み返したくなるの？','今回はちいかわ以外。雨の日に家で過ごすなら、テレビ以外だと何する？']){
- if(rateLimited||calls>=3)break;
+const evidence={mode:'real provider generation with candidate server prompt; synthetic inputs; no browser or human evaluation',commit:process.env.GITHUB_SHA||'local',at:new Date().toISOString(),limit:maxCalls,turns:[]};
+for(const input of ['草むしり検定の最初の結果は？','ハチワレの気持ち、えみちいはどう思う？','そのお祝いのクッキーって、手作りなの？']){
+ if(rateLimited||calls>=maxCalls)break;
  if(/ちいかわ以外/.test(input))state.dialogueControl={concise:true,avoidFandom:true};
- const logs=[],start=Date.now();
+ const logs=[],start=Date.now(),rawStart=rawOutputs.length;
  const messages=await game.buildMessages({input,state,session:{turns:state.turn+1}});
  const result=await runChain(env,game,messages,entry=>logs.push(entry),{startedAt:start});
- evidence.turns.push({input,systemCharacters:messages[0].content.length,history:messages.slice(1,-1),wallMs:Date.now()-start,result,attempts:logs});
+ evidence.turns.push({input,systemCharacters:messages[0].content.length,history:messages.slice(1,-1),wallMs:Date.now()-start,result,attempts:logs,rawOutputs:rawOutputs.slice(rawStart)});
  if(result?.error==='rate-limited'||!result?.text)break;
  state.history.push({role:'user',text:input},{role:'enny',text:result.text});
   state.knowledge=selectKnowledge(input,state).memory;state.turn++;
