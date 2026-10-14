@@ -20,6 +20,7 @@ import {playerMemoryPrompt} from './emmichy-player-memory.js';
 import {learnerPrompt} from './emmichy-japanese-learner.js';
 import {attributionPrompt} from './emmichy-chiikawa-attribution.js';
 import {specialistPrompt} from './emmichy-specialist.js';
+import {specialistReplyFormat,renderSpecialistReply} from './emmichy-specialist-reply.js';
 
 function nameHint(input,state){
  if(avoidsFandom(input,state.history||[])||/つらい|苦しい|病気|事故|亡く|死に|相談/.test(input))return '';
@@ -121,10 +122,14 @@ ${playerMemoryPrompt(state.playerMemory)}
 ${repairPrompt(data.input,state)}
 ${learnerPrompt(data.input)}
 ${attributionPrompt(data.input,state)}
+${specialist?specialistReplyFormat:''}
 `;
 }
 
 function validateText(value,{messages=[]}={}){
+  const planned=renderSpecialistReply(value,{messages});
+  if(planned!==undefined)return planned;
+  if(typeof value==='string'&&/^\s*[\[{]/.test(value))return null;
   if(typeof value!=='string')return null;
   let t=value.replace(/[\r\n]+/g,'\n').trim();
   t=t.replace(/^['"`]+|['"`]+$/g,'').trim();
