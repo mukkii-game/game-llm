@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import game from '../games/emmichy.js';
-import {specialistPacket} from '../games/emmichy-specialist.js';
+import {specialistPacket,noteSpecialistDelivery} from '../games/emmichy-specialist.js';
 
 test('the relay reconstructs scoped owned evidence and refuses supplied facts',async()=>{
  const first=specialistPacket('島二郎の水流');
@@ -22,4 +22,16 @@ test('a structured fact selection is rendered from owned data and cannot change 
  assert.match(out.text,/ハチワレが合格.*ちいかわは不合格/);assert.match(out.text,/アタシ、友達/);assert.equal(out.source,'mixed');
  assert.equal(game.validate(JSON.stringify({beats:[{fact:'exam:fake-success'}]}),{messages}),null);
  assert.equal(game.validate(JSON.stringify({beats:[{fact:'exam:result',text:'二人とも合格'}]}),{messages}),null);
+});
+
+test('a player view remains on its delivered scene and is not promoted to canon',async()=>{
+ const packet=specialistPacket('草むしり検定のお祝いのクッキー');
+ const state={specialist:noteSpecialistDelivery(packet.memory,packet.evidence[0].spoken),history:[{role:'enny',text:packet.evidence[0].spoken}]};
+ const messages=await game.buildMessages({input:'私は食べずに写真を残したい派',state});
+ assert.match(messages[0].content,/player-view/);
+ assert.match(messages[0].content,/プレイヤーの説明や好みを原作の事実へ変えない/);
+ const schema=game.outputSchema(messages);
+ assert.ok(schema.properties.beats.items.properties.fact.enum.includes('exam:cookie'));
+ const answer=game.validate(JSON.stringify({beats:[{say:'写真を残したいんだね。アタシなら、ココアも用意しておやつにしたいな。'}]}),{messages});
+ assert.equal(answer.source,'llm');assert.match(answer.text,/写真を残したい/);
 });
