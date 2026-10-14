@@ -1,6 +1,7 @@
 import {specialistFacts} from './emmichy-specialist.js';
 import {attributionRepair} from './emmichy-chiikawa-attribution.js';
 import {rejectedJoke} from './emmichy-humor.js';
+import {dialogueSentences} from './emmichy-dialogue-sentences.js';
 export const SPECIALIST_MARKER='専門会話の根拠（サーバー所有資料だけ）: ';
 const facts=new Map(specialistFacts.map(r=>[r.id,r]));
 const fold=s=>String(s).normalize('NFKC').replace(/[\s。!?！？、]/g,'');
@@ -37,16 +38,23 @@ export function renderSpecialistReply(value,{messages=[]}={}){
   const question=Object.hasOwn(beat,'ask'),key=question?'ask':'say',text=beat[key];
   if(typeof text!=='string'||!text.trim()||text.length>100||rejectedJoke(text))return null;
   if(question&&(!/[?？]$/.test(text)||++asks>1)||!question&&++says>3)return null;
+  if(question&&/次の|次ノ|次.{0,4}挑戦|別の|ほかの|他の/.test(text))continue;
   // Concrete story assertions belong to a fact beat. Pure feelings and explicit
   // self-imagination remain free prose; unsupported fragments are omitted.
-  const imagined=/もし|だったら|してくれたら|アタシの想像/.test(text);
+  const accepted=dialogueSentences(text).filter(sentence=>{
+  const imagined=/もし|だったら|してくれたら|アタシの想像/.test(sentence);
+  const text=sentence;
+  const wrongResult=/ハチワレ(?:は|が|だけ)[^、。！？!?]{0,16}(?:不合格|落第|落ち)|ちいかわ(?:は|が|だけ)[^、。！？!?]{0,16}(?<!不)合格(?:した|できた)|ちいかわ(?:は|が|だけ)[^、。！？!?]{0,16}受かった/.test(text);
+  const inference=!question&&allowed.has('exam:result')&&!wrongResult&&/思う|感じる|かもしれ|だろう|かな/.test(text)&&!/言っ|叫|作っ|渡|戦|遊|食べ|飲ん|歌っ|持っ|撮っ|顔|表情|「/.test(text);
   const action=/(?:ちいかわ|ハチワレ|うさぎ|モモンガ|島二郎|シーサー|ラッコ|くりまんじゅう|ヒトハ|フタバ|古本屋)(?:たち|だけ)?(?:が|は).{0,45}(?:言っ|叫|作っ|渡し|渡す|合格|不合格|落ち|落第|戦っ|遊ん|助け|食べ|飲ん|歌っ|持っ|撮っ)/.test(text);
   const personalReference=/アタシ|私/.test(text)&&/好き|思|感じ|気持ち|胸|嬉|うれし|不安|悲し|気にな/.test(text)&&!action;
-  const story=/原作で|公式で/.test(text)||action||/場面|シーン|エピソード/.test(text)&&!personalReference;
+  const depicted=/(?:ちいかわ|ハチワレ|うさぎ|モモンガ|島二郎|シーサー)の.{0,20}(?:がっかり|泣いて|怒った|笑った|困った).{0,8}(?:顔|表情|姿)/.test(text);
+  const story=/原作で|公式で/.test(text)||action||depicted||!question&&/場面|シーン|エピソード/.test(text)&&!personalReference;
   const quoted=/「[^」]+」.{0,12}(?:言|叫|セリフ|台詞)/.test(text)&&!/(?:アタシ|私)(?:も|が|は)?[、\s]*「/.test(text);
-  if(attributionRepair(text)||!imagined&&(story||quoted))continue;
-  if(parts.some(p=>fold(p)===fold(text)))continue;
-  parts.push(text.trim());generated++;
+  return !wrongResult&&!attributionRepair(text)&&(imagined||inference||!story&&!quoted);
+  }).map(sentence=>/思う|感じる|かもしれ|だろう/.test(sentence)&&!/アタシ|私/.test(sentence)?'アタシの見方だけど、'+sentence:sentence).join(' ');
+  if(!accepted||parts.some(p=>fold(p)===fold(accepted)))continue;
+  parts.push(accepted.trim());generated++;
  }
  const text=parts.join(' ');
  if(!text||text.length<8||text.length>180)return null;

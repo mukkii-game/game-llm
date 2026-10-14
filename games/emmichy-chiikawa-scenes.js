@@ -9,7 +9,7 @@ export const sceneFacts=[
  {id:'exam:episodes',subject:'ちいかわとハチワレ',object:'アニメ57〜63話',cues:['話数','何話','ナンワ','いつの回','アニメ'],fact:'フジテレビの制作担当者インタビューは、アニメ第57〜63話をちいかわとハチワレが草むしり検定を受ける話と説明する。',spoken:'アニメの草むしり検定のまとまりは、第57話から第63話だよ。',source:'https://www.fujitv.co.jp/company/fujitvwork/vol25.html',evidence:'official',scope:'anime:57-63',spoiler:'none',limits:['制作者自身の学習塾の経験を作中人物の経験にしない','同じ回が現在最新放送だとしない']}
 ].map(r=>Object.freeze({...r,checkedAt:'2026-10-14',scene:'examination',feeling:{
  'exam:attempt':'一緒に挑戦するって心強いけど、結果を聞く時はアタシも緊張しちゃう。',
- 'exam:result':'友達にはおめでとう、でも自分は悔しい。アタシ、どっちの気持ちも大事にしたい。',
+ 'exam:result':'アタシなら、友達のお祝いもしたいけど、自分の悔しさも消えないと思う。どっちの気持ちも大事にしたい。',
  'exam:celebrate':'アタシなら、悔しさとお祝いしたい気持ち、両方ありそう。そこを考えると胸がぎゅっとなる。',
  'exam:cookie':'アタシなら、そんなお祝いもらったら、食べる前にずっと眺めちゃう。',
  'exam:episodes':'受験前と結果が出た後、二人をどう見るか変わるのが、アタシは気になる。'
