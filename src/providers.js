@@ -3,11 +3,14 @@ const TIMEOUT_MS = 9000;
 
 export async function groq(env, messages, opt) {
   if (!env.GROQ_API_KEY) throw new Error('no-key');
+  const model=env.GROQ_MODEL || 'openai/gpt-oss-120b';
+  const strictSchema=['openai/gpt-oss-120b','openai/gpt-oss-20b','qwen/qwen3.8-27b'].includes(model);
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${env.GROQ_API_KEY}` },
     body: JSON.stringify({
-      model: env.GROQ_MODEL || 'openai/gpt-oss-120b', temperature: opt.temperature, max_tokens: opt.maxTokens, messages,
+      model, temperature: opt.temperature, max_tokens: opt.maxTokens, messages,
+      ...(opt.outputSchema?{response_format:strictSchema?{type:'json_schema',json_schema:{name:'game_reply',strict:true,schema:opt.outputSchema}}:{type:'json_object'}}:{}),
       // gpt-oss は答える前に考える型。会話では考える量を減らして速さを優先する
       ...((env.GROQ_MODEL || 'openai/gpt-oss-120b').includes('gpt-oss') ? { reasoning_effort: opt.reasoning || env.GROQ_REASONING || 'low' } : {}),
     }),
@@ -32,7 +35,7 @@ export async function gemini(env, messages, opt) {
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: system }] },
       contents,
-      generationConfig: { temperature: opt.temperature, maxOutputTokens: opt.maxTokens },
+      generationConfig: { temperature: opt.temperature, maxOutputTokens: opt.maxTokens, ...(opt.outputSchema?{responseMimeType:'application/json'}:{}) },
     }),
     signal: AbortSignal.timeout(opt.timeoutMs ?? TIMEOUT_MS),
   });
