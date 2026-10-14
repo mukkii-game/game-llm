@@ -23,15 +23,16 @@ export const specialistFacts=Object.freeze([...chiikawaRelations.filter(r=>r.evi
 const records=specialistFacts;
 const byId=new Map(records.map(r=>[r.id,r]));
 const scenes=[
- {id:'examination',cues:['草むしり検定','クサムシリケンテイ','5級','5キュウ','五級'],ids:sceneFacts.map(r=>r.id),label:'草むしり検定の具体的な場面'},
+ {id:'examination',cues:['草むしり検定','クサムシリケンテイ','5級','5キュウ','五級'],ids:sceneFacts.map(r=>r.id),participants:['ちいかわ','ハチワレ'],label:'草むしり検定の具体的な場面'},
+ {id:'dated-topics',cues:['ちいかわのニュース','チイカワノニュース','最近のちいかわ','サイキンノチイカワ','最新ニュース'],ids:topicFacts.map(r=>r.id),label:'ちいかわの最新案内'},
  {id:'park-christmas',cues:['ちいかわパーク','チイカワパーク','パークのクリスマス','クリスマスのパーク'],ids:['topic:park:christmas-2026'],label:'パークの最新案内'},
  {id:'strong-hachiware-goods',cues:['強くなったハチワレ','強クナッタハチワレ','パラレルワールドのマスコット'],ids:['topic:goods:strong-hachiware'],label:'マスコットの最新案内'},
- {id:'water',cues:['水流','スイリュウ'],ids:['relation:chiikawa-23'],label:'島二郎の水流'},
+ {id:'water',cues:['水流','スイリュウ'],ids:['relation:chiikawa-23'],participants:['島二郎'],label:'島二郎の水流'},
  {id:'ending',cues:['ひとりごつ','ED','エンディング'],ids:['reviewed:hachi:ending'],label:'TVアニメのED'},
  {id:'opening',cues:['くつずれ','靴ずれ','OP','オープニング'],ids:['reviewed:hachi:opening'],label:'映画のOP'},
  {id:'tv-opening',cues:[],ids:[],label:'TVアニメのOP（映画のOPとは別）'},
- {id:'ear',cues:['耳を引っ張','耳が伸び','崖'],ids:['reviewed:momonga:ear'],label:'映画のモモンガとちいかわの耳'},
- {id:'log',cues:['丸太','冒頭の三人'],ids:['reviewed:trio:log'],label:'映画冒頭の掛け合い'},
+ {id:'ear',cues:['耳を引っ張','耳が伸び','崖'],ids:['reviewed:momonga:ear'],participants:['モモンガ','ちいかわ'],label:'映画のモモンガとちいかわの耳'},
+ {id:'log',cues:['丸太','冒頭の三人'],ids:['reviewed:trio:log'],participants:['ちいかわ','ハチワレ','うさぎ'],label:'映画冒頭の掛け合い'},
  {id:'preparation',cues:['みんなで準備','討伐の準備'],ids:['reviewed:trio:prepare'],label:'映画の討伐準備'},
  {id:'pochette',cues:['ポシェット'],ids:['reviewed:chiikawa:pochette'],label:'ちいかわのポシェット'}
 ];
@@ -57,11 +58,14 @@ export function specialistPacket(input,state={},now=new Date()){
   return {active:false,memory:changed?{...memory,subject:'',scene:'',focus:''}:memory,evidence:[],gap:''};
  }
  const genericChii=chii?.name==='ちいかわ'&&!/本人|(?:ちいかわ|チイカワ)(?:が|は|ガ|ハ)|好きなところ|好キナトコロ/.test(input);
- const subject=chii&&records.some(r=>r.subject.startsWith(chii.name))&&(!genericChii||!memory.subject)?chii.name:memory.subject;
+ let subject=chii&&records.some(r=>r.subject.startsWith(chii.name))&&(!genericChii||!memory.subject)?chii.name:memory.subject;
  // Explicit new characters leave the previous scene unless a scene cue is present.
- const changedCharacter=chii&&!genericChii&&chii.name!==memory.subject;
+ const previousScene=scenes.find(s=>s.id===memory.scene);
+ const participant=chii&&previousScene?.participants?.includes(chii.name);
+ const changedCharacter=chii&&!genericChii&&chii.name!==memory.subject&&!participant;
+ const characterProfile=/本人|普段|全体|キャラとして/.test(input);
  const reference=/^(ソレ|ソノ|アレ|アノ|ソウ|違|チガ|オナジ)/.test(t)||Boolean(feedbackIntent(input));
- const scene=explicit||((follow&&!changedCharacter||reference)?scenes.find(s=>s.id===memory.scene):null);
+ const scene=explicit||(!characterProfile&&(follow&&!changedCharacter||reference||participant)?previousScene:null);
  let selected=[];
  const score=r=>r.cues.reduce((n,c)=>n+(fold(c).length>=2&&t.includes(fold(c))?12:0),0)+(chii&&r.subject.includes(chii.name)?4:0);
  if(scene)selected=scene.ids.map(id=>byId.get(id)).filter(Boolean).sort((a,b)=>score(b)-score(a)||Number(memory.said.includes(a.id))-Number(memory.said.includes(b.id))).slice(0,3);
@@ -76,6 +80,7 @@ export function specialistPacket(input,state={},now=new Date()){
  const day=now.toISOString().slice(0,10);
  selected=selected.filter(r=>(!r.expires||day>=r.checkedAt&&day<=r.expires)&&(r.spoiler!=='plot'||specificScene&&!noSpoilers));
  const gap=scene&&!selected.length?scene.label:'';
+ if(explicit&&selected.length&&(!subject||!selected.some(r=>r.subject.includes(subject))))subject=selected[0].subject;
  const next={...memory,subject,scene:scene?.id||'',focus:selected[0]?.id||''};
  return {active:true,memory:next,gap,evidence:selected.map(r=>({id:r.id,subject:r.subject,object:r.object,fact:r.fact,spoken:r.spoken,source:r.source,evidence:r.evidence,scope:r.scope,checkedAt:r.checkedAt,limits:r.limits,said:memory.said.includes(r.id)}))};
 }

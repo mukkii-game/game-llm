@@ -40,7 +40,9 @@ export function renderSpecialistReply(value,{messages=[]}={}){
   // Concrete story assertions belong to a fact beat. Pure feelings and explicit
   // self-imagination remain free prose; unsupported fragments are omitted.
   const imagined=/もし|だったら|してくれたら|アタシの想像/.test(text);
-  const story=/原作で|公式で|場面|シーン|エピソード|(?:ちいかわ|ハチワレ|うさぎ|モモンガ|島二郎|シーサー|ラッコ|くりまんじゅう|ヒトハ|フタバ|古本屋)(?:たち|だけ)?(?:が|は).{0,45}(?:言っ|叫|作っ|渡し|渡す|合格|不合格|落ち|落第|戦っ|遊ん|助け|食べ|飲ん|歌っ|持っ|撮っ)/.test(text);
+  const action=/(?:ちいかわ|ハチワレ|うさぎ|モモンガ|島二郎|シーサー|ラッコ|くりまんじゅう|ヒトハ|フタバ|古本屋)(?:たち|だけ)?(?:が|は).{0,45}(?:言っ|叫|作っ|渡し|渡す|合格|不合格|落ち|落第|戦っ|遊ん|助け|食べ|飲ん|歌っ|持っ|撮っ)/.test(text);
+  const personalReference=/アタシ|私/.test(text)&&/好き|思|感じ|気持ち|胸|嬉|うれし|不安|悲し|気にな/.test(text)&&!action;
+  const story=/原作で|公式で/.test(text)||action||/場面|シーン|エピソード/.test(text)&&!personalReference;
   const quoted=/「[^」]+」.{0,12}(?:言|叫|セリフ|台詞)/.test(text)&&!/(?:アタシ|私)(?:も|が|は)?[、\s]*「/.test(text);
   if(attributionRepair(text)||!imagined&&(story||quoted))continue;
   if(parts.some(p=>fold(p)===fold(text)))continue;
