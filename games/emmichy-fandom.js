@@ -217,7 +217,7 @@ export function rememberKnowledge(value,input){
  const focus=found.toSorted((a,b)=>score(b)-score(a))[0]?.id||memory.focus;
  return {...memory,focus,mentions:append(memory.mentions,names.map(n=>n.id),64),facets:append(memory.facets,found.map(c=>c.id),32)};
 }
-const sensitive=input=>/ツライ|苦シ|病気|事故|亡ク|死ニ|相談|嫌イ|キライ|苦手|ヤメ|イガイ|以外|バカリ/.test(fold(input));
+const sensitive=input=>/ツライ|苦シ|病気|事故|亡ク|死ニ|相談|嫌イ|キライ|苦手|ヤメ|イガイ(?!イ)|以外|バカリ/.test(fold(input));
 function fanInvitation(input,state){
  const t=fold(input),names=exactNames(input,state);
  if(/最新|結末|何|ナニ|誰|ダレ|イツ|ドコ|ナゼ|ドウシテ|違|チガ|訂正|比較|ジャナ|デハナ|シナイ|シテナイ|ソウジャ/.test(t))return false;

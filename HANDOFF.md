@@ -1,3 +1,9 @@
+# 2026-10-17 Emmichy: question intent and connected fan conversation
+
+Paired frontend link1: accept phrasing of character preference questions, keep agreement on exam feelings, do not mistake 気遣いがいい for 以外 or contained イカ in チイカワ for a second subject. Ordinary 作ったよ is not a named creation. Reconstruct a limited, reported player friend/food episode from user history, honor photo correction and desired aspect, and explain the actual connection to Hachiware as Emmichy's interpretation, not a canon event. Gameplay keeps valid generated prose; model prompt distinguishes this conversational act from a personal opinion question. 71 backend/255 frontend tests pass, paired local actual-app two scenarios each8 sends before/after, one explicitly Luna medium saved-transcript reviewer. ZERO live game model calls after previous429. Knowledge coverage and general semantics remain limited. Evidence Emmichy/docs/conversation-connections-20261017.md. Main/publication policy remains; no paid service or Relay.
+
+---
+
 # 2026-10-17 Emmichy: rate-limit recovery candidate
 
 Main is the sole integration/publication branch; validated fixes are authorized for immediate publication. Older pilot/approval/stop-all-on-429 instructions below are historical. No paid-service or billing changes.
