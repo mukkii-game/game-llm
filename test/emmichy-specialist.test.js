@@ -12,7 +12,7 @@ test('the relay reconstructs scoped owned evidence and refuses supplied facts',a
 });
 test('a TV-opening question never receives the film-opening fact',async()=>{
  const m=await game.buildMessages({input:'ちいかわのアニメOPは？',state:{}});
- assert.match(m[0].content,/TVアニメのOP（映画のOPとは別）/);
+ assert.match(m[0].content,/短い放送時間のTVアニメにはOPがない/);
  assert.doesNotMatch(m[0].content,/映画のオープニングテーマは「くつずれ」/);
 });
 test('a structured fact selection is rendered from owned data and cannot change the exam result',async()=>{

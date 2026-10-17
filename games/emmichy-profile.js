@@ -1,5 +1,6 @@
 // The single authored identity, created under the user's request to write a portfolio.
 import {exactNames} from './emmichy-names.js';
+import {currentTurnFocus} from './emmichy-turn-focus.js';
 export const identity=Object.freeze({age:17,country:'スウェーデン',city:'ヨーテボリ',siblingAge:14,visitCity:'東京',visitDays:5,visitCount:1});
 export const identityReadings=Object.freeze({[identity.country]:'スウェーデン',[identity.city]:'ヨーテボリ'});
 export const profile=Object.freeze({
@@ -25,7 +26,7 @@ export const japaneseExamples=Object.freeze([
  '日本語の小さい「っ」、まだ迷うの。来てと、切って。少し止まるだけで意味が変わるね。',
  '橋と、箸。文字は違うのに、音の高さを変えるのがアタシには難しいの。'
 ]);
-const selfAlias=/(?:えみち[いぃ]|エミチ[イィ]|(?<![a-z0-9])emmichy(?![a-z0-9]))/i;
+const selfAlias=/(?:えみち[いぃ]|エミチ[イィ]|エミー|(?<![a-z0-9])emmichy(?![a-z0-9]))/i;
 export const accessoryReply='あ、わかる？ これ、ちいかわなの。アタシが作ったの！';
 export function accessoryCue(raw){
  const text=String(raw).normalize('NFKC').replace(/[ぁ-ゖ]/g,c=>String.fromCharCode(c.charCodeAt(0)+96)).replace(/\s/g,'');
@@ -43,6 +44,11 @@ export function complimentReaction(raw,state={}){
   ||folded.match(/^アイ(?:$|[!！?？。、])/);
  if(!praise||/嫌イ|苦手|ツマラ|ヤメ|ナイ|無イ|ジャナ|デハナ|相談|病気|事故|亡ク|死ニ/.test(folded))return null;
  const affection=/好キ|スキ|好ミ|コノミ|愛|アイ|ラブ/.test(praise[0]);
+ if(currentTurnFocus(raw)||/好キ(?:ッテ|ト)言ッタノハ|スキ(?:ッテ|ト)言ッタノハ/.test(folded))return null;
+ // A carried subject or an explicit object keeps its affection. Only bare
+ // affection, or an actual address to Emmichy, becomes praise of herself.
+ const bare=/^(?:大好キ|ダイスキ|好キ|スキ|好ミ|コノミ|愛シテル|アイシテル)(?:ダ|ダヨ|ヨ|デス|ナノ|ネ|!|！|。)*$/.test(folded);
+ if(affection&&!bare&&!selfMention(input)&&(/(?:ミンナ|二人|フタリ|ソノ|アノ|コノ).*(?:好キ|スキ)|(?:好キ|スキ).*(?:トコロ|空気|雰囲気)/.test(folded)||state.specialist?.subject&&!exactNames(input,state).length))return null;
  if(affection&&state.specialist?.subject&&!/(?:アナタ|エミチ[イィ]|emmichy)(?:ガ|ヲ|ト).*好キ|^(?:好キ|スキ)(?:ダヨ|ヨ|デス)?[!！。]*$/i.test(folded)&&/ドウ思|ドウオモ|料理|甘イモノ|強イノニ|資格/.test(folded))return null;
  if(/(?:好キ|スキ)ナトコロ.*(?:聞カセ|教エ)|誰.*(?:好キ|スキ)|ドンナグッズ/.test(folded))return null;
  // Asking about a preference is not a declaration, even with her name in the sentence.
@@ -93,11 +99,15 @@ export function profileReply(raw){
  const text=String(raw).normalize('NFKC').replace(/\s/g,'');
  if(accessoryCue(text))return {topic:'profile',id:'profile:accessory',text:accessoryReply};
  const folded=text.replace(/[ぁ-ゖ]/g,c=>String.fromCharCode(c.charCodeAt(0)+96));
+ if(/日本語.{0,12}(?:ジャナク|デハナク)/.test(folded))return null;
+ if(selfMention(text)&&/(?:何|ナニ)(?:ヲ)?(?:食ベタ|タベタ)/.test(folded))return {topic:'profile',id:'profile:snack-routine',text:'さっきはシナモンロールとココアのおやつ。好きな組み合わせだと、いつも少し嬉しくなるの。あなたの食べたものを聞くと、ほかにも食べたくなっちゃう。'};
+ if(selfMention(text)&&/(?:甘イ(?:物|モノ)|料理|食ベ物).*(?:好キ|スキ)|(?:何|ナニ).*(?:食ベタイ|タベタイ)/.test(folded))return {topic:'profile',id:'profile:food-preference',text:/甘イ/.test(folded)?'甘い物、大好き！ シナモンロールとココア、選ぶ時からもう嬉しいの。日本のコンビニのプリンも、また食べたいな。':'料理なら、あったかいスープが好き。おやつならシナモンロール！ 好きなものを順番に考えたら、食べたいものが増えちゃった。'};
+ if(/今日.{0,8}仕事ノ(?:アト|後).{0,8}何シテ|今日ハ何シテタ/.test(folded))return {topic:'profile',id:'profile:after-school',text:'アタシは仕事はしてなくて、まだ高校生なの。学校のあとは漫画やゲームを楽しむよ。好きな場面の日本語、声に出してみるのも好き。'};
  if(/日本語|ニホンゴ/.test(folded)&&/ドウヤッテ|方法|練習/.test(folded))return {topic:'profile',id:'profile:study-method',text:'教わった言い方を小さいノートに書いて、こういう会話で試すの。漫画とアニメも読むよ。使えた言葉が増えると、嬉しい！'};
  if(/日本語|ニホンゴ/.test(folded)&&/スウェーデン.*(?:暮ラ|住|ドンナ感ジ)/.test(folded))return {topic:'profile',id:'profile:home-study',text:'うん、日本語を勉強中！ ヨーテボリの近くで、家族と暮らしてるの。学校のあと、漫画やゲームを楽しむ学生だよ。'};
  if(/(?:オヤツ|おやつ|オ菓子).*(?:何|ナニ|アル|好キ|スキ|食ベ)|(?:何|ナニ).*(?:オヤツ|おやつ)/.test(folded))return {topic:'profile',id:'profile:snack',text:'シナモンロールとココアの組み合わせ、好き！ 日本で食べたプリンも覚えてるよ。今なら、あなたとおやつの話でお腹すいちゃう。'};
  if(/(?:何テ|ナンテ).*(?:呼バレ|ヨバレ)|^(?:名前|ナマエ)(?:ハ|教エ|オシエ)/.test(folded))return {topic:'profile',id:'profile:name',text:'エミチィって呼ばれてるよ。あなたも、そう呼んで！'};
- if(/日本語|ニホンゴ/.test(folded)&&!/(?:私|僕|俺|ワタシ|ボク|オレ|友達|彼).{0,4}(?:ハ|ガ|モ|ノ)/.test(folded)&&(!/チイカワ|ハチワレ|ウサギ|シーサー/.test(folded)||/勉強|ベンキョウ|覚|学/.test(folded)))return {topic:'profile',id:'profile:languages',text:'うん、日本語を勉強してるよ！ 漫画とアニメ、それからこういう会話で覚えてるの。長い音と小さい「っ」は、まだ難しいの。'};
+ if(/日本語|ニホンゴ/.test(folded)&&!/日本語.{0,12}(?:ジャナク|デハナク)|日本語.{0,12}話シタクナイ/.test(folded)&&!/(?:私|僕|俺|ワタシ|ボク|オレ|友達|彼).{0,4}(?:ハ|ガ|モ|ノ)/.test(folded)&&(!/チイカワ|ハチワレ|ウサギ|シーサー/.test(folded)||/勉強|ベンキョウ|覚|学/.test(folded)))return {topic:'profile',id:'profile:languages',text:'うん、日本語を勉強してるよ！ 漫画とアニメ、それからこういう会話で覚えてるの。長い音と小さい「っ」は、まだ難しいの。'};
  const home=/(?:スウェーデン|ヨーテボリ).*(?:生マレ|ウマレ|育|ソダ|出身|シュッシン|住|スン|[?？])/.test(folded)&&!/(?:私|僕|俺|ワタシ|ボク|オレ|友達|彼女|彼氏)/.test(folded);
  const own=selfMention(text)||/あなた|君|きみ/.test(text)||home;
  if(!own&&!/^(?:何歳|いくつ|どこ出身|出身は|どこに住|どこの国|家族は|趣味は|学校は|仕事は|何語|好きな(?:食べ物|漫画|マンガ|ゲーム)|日本に来た|自己紹介)/.test(text))return null;

@@ -6,12 +6,14 @@ import {feedbackIntent} from './emmichy-conversation-repair.js';
 import {sceneFacts} from './emmichy-chiikawa-scenes.js';
 import {topicFacts} from './emmichy-chiikawa-news.js';
 import {fanConversation} from './emmichy-fan-conversation.js';
+import {currentTurnFocus} from './emmichy-turn-focus.js';
+import {detailScenes} from './emmichy-chiikawa-detail.js';
 const fold=s=>String(s||'').normalize('NFKC').replace(/[ぁ-ゖ]/g,c=>String.fromCharCode(c.charCodeAt(0)+96)).replace(/[\s。、!?！？「」]/g,'').toLowerCase();
 import {knowledgeFacts,knowledgeById,matchingKnowledgeQuestions} from './emmichy-knowledge-catalog.js';
 export const specialistFacts=knowledgeFacts;
 const records=specialistFacts;
 const byId=knowledgeById;
-const scenes=[
+const scenes=[...detailScenes,
  {id:'examination',cues:['草むしり検定','クサムシリケンテイ','5級','5キュウ','五級'],ids:sceneFacts.map(r=>r.id),participants:['ちいかわ','ハチワレ'],label:'草むしり検定の具体的な場面'},
  {id:'dated-topics',cues:['ちいかわのニュース','チイカワノニュース','最近のちいかわ','サイキンノチイカワ','最新ニュース'],ids:topicFacts.map(r=>r.id),label:'ちいかわの最新案内'},
  {id:'park-christmas',cues:['ちいかわパーク','チイカワパーク','パークのクリスマス','クリスマスのパーク'],ids:['topic:park:christmas-2026'],label:'パークの最新案内'},
@@ -20,7 +22,7 @@ const scenes=[
  {id:'island-menu',cues:['島二郎のお店','島二郎の店','シマジロウノオ店','シマジロウノ店','カツカレー','貝汁','フルーツパフェ'],ids:['relation:chiikawa-25'],participants:['島二郎'],label:'島二郎の店のメニュー'},
  {id:'ending',cues:['ひとりごつ','ED','エンディング'],ids:['reviewed:hachi:ending'],label:'TVアニメのED'},
  {id:'opening',cues:['くつずれ','靴ずれ','OP','オープニング'],ids:['reviewed:hachi:opening'],label:'映画のOP'},
- {id:'tv-opening',cues:[],ids:[],label:'TVアニメのOP（映画のOPとは別）'},
+ {id:'tv-opening',cues:[],ids:['reviewed:tv:no-opening'],label:'TVアニメのOP（映画のOPとは別）'},
  {id:'ear',cues:['耳を引っ張','耳が伸び','崖'],ids:['reviewed:momonga:ear'],participants:['モモンガ','ちいかわ'],label:'映画のモモンガとちいかわの耳'},
  {id:'log',cues:['丸太','冒頭の三人'],ids:['reviewed:trio:log'],participants:['ちいかわ','ハチワレ','うさぎ'],label:'映画冒頭の掛け合い'},
  {id:'preparation',cues:['みんなで準備','討伐の準備'],ids:['reviewed:trio:prepare'],label:'映画の討伐準備'},
@@ -38,7 +40,7 @@ export function specialistPacket(input,state={},now=new Date()){
  const chii=focusName(input,recognition),other=names.find(n=>n.work!=='chiikawa');
  const previousScene=scenes.find(s=>s.id===memory.scene);
  const conversation=fanConversation(input,{...state,specialist:memory});
- const selfTopic=!chii&&(/日本語|ニホンゴ|スウェーデン|ヨーテボリ|家族|カゾク/.test(t)||/エミチ|emmichy/.test(t)&&!/ドウ思|ドウオモ/.test(t)&&!conversation);
+ const selfTopic=Boolean(currentTurnFocus(input))||!chii&&(/日本語|ニホンゴ|スウェーデン|ヨーテボリ|家族|カゾク/.test(t)&&!/日本語.{0,12}(?:ジャナク|デハナク)/.test(t)||/エミー|エミチ|emmichy/.test(t)&&!/ドウ思|ドウオモ/.test(t)&&!conversation);
  const matches=c=>['OP','ED'].includes(c)?new RegExp(`\\b${c}\\b`,'i').test(String(input)):t.includes(fold(c));
  let explicit=scenes.find(s=>s.cues.some(matches));
  const tvRequested=/アニメ|テレビ|tv/.test(t)&&(!/映画|エイガ/.test(t)||/(?:映画|エイガ)(?:デハナク|ジャナク|ジャナイ|以外|イガイ)/.test(t));
@@ -56,20 +58,20 @@ export function specialistPacket(input,state={},now=new Date()){
  const genericChii=chii?.name==='ちいかわ'&&!/本人|(?:ちいかわ|チイカワ)(?:が|は|ガ|ハ)|好きなところ|好キナトコロ/.test(input);
  let subject=chii&&records.some(r=>r.subject.startsWith(chii.name))&&(!genericChii||!memory.subject)?chii.name:memory.subject;
  if(memory.subject==='ハチワレ'&&/チイカワト一緒/.test(t))subject=memory.subject;
- if(/誰ガ好キ|ダレガスキ/.test(t))subject='ハチワレ';
+ if(/(?:誰|ダレ)(?:ガ)?(?:一番|イチバン)?(?:好キ|スキ)/.test(t))subject='ハチワレ';
  // Explicit new characters leave the previous scene unless a scene cue is present.
  const participant=chii&&previousScene?.participants?.includes(chii.name);
  const changedCharacter=chii&&!genericChii&&chii.name!==memory.subject&&!participant;
  const characterProfile=/本人|普段|全体|キャラとして|性格|魅力/.test(input);
  const reference=/^(ソレ|ソノ|アレ|アノ|ソウ|違|チガ|オナジ)|ソコデ/.test(t)||spoilerRequest||Boolean(feedbackIntent(input));
- const scene=explicit||(!characterProfile&&((follow||facet)&&!changedCharacter||reference||participant)?previousScene:null);
+ let scene=explicit||(!characterProfile&&((follow||facet)&&!changedCharacter||reference||participant)?previousScene:null);
  let selected=[];
- if(!scene&&memory.subject&&/具体的.*場面|印象ニ残ル場面/.test(t)){
-  explicit=scenes.find(s=>s.id==='examination'&&s.participants.includes(memory.subject));
+ if(!scene&&memory.subject&&/具体的.*場面|印象ニ残ル場面|(?:オ気ニ入リ|オキニイリ|好キナ).*(?:場面|シーン)/.test(t)){
+  scene=scenes.find(s=>s.id==='examination'&&s.participants.includes(memory.subject));
  }
  const examIntent=scene?.id==='examination'?( /クッキー|手作リ|作ッタ|買ッタ/.test(t)?'exam:cookie':/祝|オイワイ|翌朝|次ノ日/.test(t)?'exam:celebrate':/結果|合否|合格|不合格|落チ|オチ|気持チ|思ウ|ドウ思/.test(t)?'exam:result':/何話|ナンワ|話数/.test(t)?'exam:episodes':''):'';
  const score=r=>(r.id===examIntent?100:0)+r.cues.reduce((n,c)=>n+(fold(c).length>=2&&t.includes(fold(c))?12:0),0)+(chii&&r.subject.includes(chii.name)?4:0);
- if(!scene&&explicit?.id==='examination')selected=[byId.get('exam:celebrate'),byId.get('exam:cookie')];
+ if(!explicit&&scene?.id==='examination'&&/(?:オ気ニ入リ|オキニイリ|好キナ|印象ニ残ル).*(?:場面|シーン)/.test(t))selected=[byId.get('exam:celebrate'),byId.get('exam:cookie')];
  else if(scene)selected=scene.ids.map(id=>byId.get(id)).filter(Boolean).sort((a,b)=>score(b)-score(a)||Number(memory.said.includes(a.id))-Number(memory.said.includes(b.id))).slice(0,3);
  else{
   const candidates=records.filter(r=>!r.scene&&(!subject||r.subject.startsWith(subject)||!characterProfile&&(chii&&fold(r.fact).includes(fold(chii.name))||r.cues.some(c=>fold(c).length>=2&&t.includes(fold(c)))))).map(r=>({r,score:(r.id==='relation:hachi-friend'&&/性格|魅力|好キナトコロ|ドンナトコロ|チイカワト一緒/.test(t)?100:0)+r.cues.reduce((n,c)=>n+(fold(c).length>=2&&t.includes(fold(c))?12:0),0)+(subject&&r.subject.startsWith(subject)?4:0)+(chii&&fold(r.fact).includes(fold(chii.name))?12:0)}));
@@ -135,7 +137,8 @@ export function specialistFallback(input,state={}){
  if(!direct.said&&!recent.includes(fold(direct.spoken))){const reply=`${direct.spoken} ${feeling}`.trim();return reply.length<=180?reply:direct.spoken;}
  if(feeling)return feeling;
  if(fresh&&packet.memory.scene)return fresh.spoken;
- return '同じ説明はもうしないね。アタシの好きな気持ちと、あなたが気になったところ、一緒に話したい。';
+ const question=packet.memory.subject==='ハチワレ'?'ハチワレのこと、アタシは友達への気遣いに目がいくの。あなたは、言葉と行動なら、どっちに惹かれる？':`${packet.memory.subject||'その子'}の話、もう少し一緒に見たいな。いま浮かんだ場面、ある？`;
+ return recent.includes(fold(question))?'うん、いま教えてくれた見方でもう一度読みたくなった。アタシの見てなかったところも、見つかりそう。':question;
 }
 export function specialistPrompt(input,state={}){
  const packet=specialistPacket(input,state);if(!packet.active)return '';

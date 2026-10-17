@@ -4,6 +4,7 @@ import {relatedChiikawa} from './emmichy-chiikawa-relations.js';
 import {focusName} from './emmichy-names.js';
 import {fanConversationReply} from './emmichy-fan-conversation.js';
 import {substantiveHistory} from './emmichy-dialogue-history.js';
+import {currentTurnFocus} from './emmichy-turn-focus.js';
 const fold=value=>String(value||'').normalize('NFKC').replace(/[ぁ-ゖ]/g,c=>String.fromCharCode(c.charCodeAt(0)+96)).replace(/\s/g,'');
 const bridges=[
  {id:'sweet',card:'chiikawa-14',match:/甘イ|アマイ|ケーキ|プリン|チョコ|スイーツ|シナモンロール/,lines:['甘い物って聞くと、ラッコを思い出しちゃう！ あんなに強いのに甘党なの、好き。','ラッコにも甘い物、選んであげたいな。アタシ、こういう時すぐちいかわのこと考えちゃう。']},
@@ -46,13 +47,17 @@ export function everydayFanConnection(input,state={}){
  return text?{subject:'player-friend-food',kind,text}:null;
 }
 export function personalFanReply(input,state={}){
+ if(currentTurnFocus(input))return null;
  const connected=everydayFanConnection(input,state);if(connected)return connected;
  const t=fold(input),chii=/チイカワ|ハチワレ|シーサー|ウサギ|モモンガ/.test(t)||state.knowledge?.work==='chiikawa'||Boolean(state.specialist?.focus);
  if(!chii||/嫌イ|キライ|病気|相談|事故|死ニ|亡ク/.test(t))return null;
  const conversation=fanConversationReply(input,state);if(conversation)return conversation;
  const question=t.split(/[。!！]/).filter(Boolean).at(-1)||t;
  const characterView=/(?:ドコ|ドンナトコロ|ドウイウトコロ).{0,4}(?:好キ|スキ|優シ|ヤサシ)|好キナトコロ|魅力|性格/.test(question);
- const focused=/^(?:ソノ|アノ)子/.test(question)?state.specialist?.subject:focusName(input,state)?.name||state.specialist?.subject;
+ const namedFocus=focusName(input,state)?.name;
+ const focused=/^(?:ソノ|アノ)子/.test(question)||namedFocus==='ちいかわ'&&state.specialist?.subject==='ハチワレ'&&/二人|関係|気ニカケ/.test(t)?state.specialist?.subject:namedFocus||state.specialist?.subject;
+ if(focused==='ハチワレ'&&/何|ナニ|ドンナ/.test(question)&&/食ベタイ|タベタイ|作ッテホシイ/.test(question))return {subject:'hachiware-meal-wish',text:'アタシなら、あったかいスープを一緒に食べたいな。ハチワレが何を作ったかの話じゃなくて、アタシの食べたいものね。おかわり、って日本語だけ先に準備しちゃう。'};
+ if(focused==='ハチワレ'&&/優シ|ヤサシ/.test(t)&&/好キ|スキ/.test(t))return {subject:'hachiware-kindness',text:'優しいところ、アタシも好き！ 気にかけてもらえると、失敗した日も一人じゃないって思えそう。ハチワレに励ましてもらう想像したら、顔がゆるんじゃう。'};
  if(focused==='ハチワレ'&&state.specialist?.focus==='relation:chiikawa-9'&&/ソノ|モウ少シ/.test(question))return {subject:'hachiware-photo',text:'小さい思い出を残したい気持ちに、アタシもなるの。すごい景色だけじゃなくて、一緒にいた時間も忘れたくないな。これはアタシの気持ちね。'};
  if(focused==='ハチワレ'&&/料理.*ドウ思|料理.*ドウオモ/.test(t))return {subject:'hachiware-food',text:'料理って、作った人の気持ちも一緒にもらう感じがして好き。もしハチワレと一緒に食べられたら、次はアタシも作りたいな。'};
  if(focused==='ラッコ'&&/甘イモノ|甘党/.test(t)&&/イイヨネ/.test(t))return {subject:'rakko',text:'うん、その組み合わせ、好き！ アタシなら、強さに憧れながら、おやつの好みは仲間だって喜んじゃう。'};
@@ -95,6 +100,8 @@ export function selectChiikawaBridge(input,state={}){
  return null;
 }
 export function chiikawaBridgePrompt(input,state={}){
+ const focus=currentTurnFocus(input);
+ if(focus)return `\n今回の最後の具体的な話題=${focus}。前置きのちいかわや「好き」に戻さず、今のパン屋・疲れ・日本語の追質問に答える。好意の対象を自分への告白に変えない。`;
  const connected=everydayFanConnection(input,state);
  if(connected)return `\n今の接点は、プレイヤー自身が話した友達との食事／贈り物。会話行為=${connected.kind}。相手の体験、訂正、話したい対象を先に受ける。ハチワレの気遣いを思い出すのは本人の連想で、原作に同じ出来事があったとは言わない。写真より友達を話したいと言われたら、写真の知識へ戻らない。接点の理由を聞かれたら、その友達との出来事から説明する。`;
  const bridge=selectChiikawaBridge(input,state);if(!bridge)return '';

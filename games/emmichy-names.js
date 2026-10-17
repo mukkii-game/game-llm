@@ -14,6 +14,7 @@ const ownedNames=new Map([...nameData,...placeNames,...gameNames.map(name=>({id:
 export const nameFromId=id=>ownedNames.get(id)||null;
 function scan(value){const input=foldName(value),found=[];for(let i=0;i<input.length;i++){let node=trie;for(let j=i;j<input.length;j++){node=node.get(input[j]);if(!node)break;for(const m of node.get('')||[]){
  if(m.key==='キュウ'&&/[0-9一二三四五六七八九十]/.test(input[i-1]||''))continue; // A grade/count is not Hunter's character.
+ if(m.key==='イカ'&&/^(?:ナク|ナイ|ナケレ)/.test(input.slice(j+1)))continue; // うまくいかなくても is not squid.
  if(/^[a-z0-9]+$/.test(m.key)&&m.key.length<=5&&!new RegExp(`\\b${m.key}\\b`,'i').test(String(value)))continue;
  if(m.row.work==='japan'&&m.key.length<4&&!String(value).includes(m.row.name)&&input!==m.key&&!/旅行|観光|温泉|空港|地名|県|市/.test(value))continue;
  if(m.row.category==='context-item'&&m.key.length<=3&&input!==m.key&&!String(value).normalize('NFKC').includes(m.alias))continue;
@@ -27,7 +28,8 @@ function inContext(row,input,work){
  // A fan's praise or a standalone call names Chiikawa's Usagi even after another work.
  return row.work==='chiikawa'&&row.name==='うさぎ'&&(!/飼|ペット|動物|野生|エサ|餌|牧場/.test(input))&&(foldName(input)==='ウサギ'||/かっこ|カッコ|好き|スキ|かわいい|カワイイ|キャラ|ちいかわ|チイカワ/.test(input));
 }
-export function exactNames(input,state={}){const work=workIn(state);return distinct(scan(input)).filter(m=>inContext(m.row,input,work)).map(m=>m.row);}
+const pronounReference=(m,input,state)=>/あのこ|あの子/.test(m.row.name)&&state.specialist?.subject&&!/あのこ|あの子/.test(state.specialist.subject)&&/あの子(?:が|の|を|に)|アノ子(?:ガ|ノ|ヲ|ニ)/.test(input);
+export function exactNames(input,state={}){const work=workIn(state);return distinct(scan(input)).filter(m=>inContext(m.row,input,work)&&!pronounReference(m,input,state)).map(m=>m.row);}
 // A work title provides context; a named character in the question owns the answer.
 export function focusName(input,state={}){
  const names=exactNames(input,state),chii=names.filter(n=>n.work==='chiikawa');
@@ -38,7 +40,7 @@ export function focusName(input,state={}){
 export function recognizeName(input,{reading='',state={}}={}){
  const work=workIn(state),values=[input,reading].filter(Boolean);
  const decline=!requestsChiikawa(input)&&/(?:漫画|マンガ).*(?:ヤメ|以外|イガイ(?!イ)|苦手)|別ノ話|ベツノハナシ|ソノ話.*ヤメ|チイカワ.*(?:ヤメ|以外|イガイ(?!イ)|嫌イ|キライ|苦手)/.test(foldName(input));
- const matches=distinct(values.flatMap(scan)).filter(m=>inContext(m.row,input,work));
+ const matches=distinct(values.flatMap(scan)).filter(m=>inContext(m.row,input,work)&&!pronounReference(m,input,state));
  const common=values.flatMap(scan).filter(m=>m.row.work==='chiikawa'&&m.row.contextOnly&&work!=='chiikawa');
  matches.sort((a,b)=>b.length-a.length||(b.row.work===work?1:0)-(a.row.work===work?1:0));
  const chii=focusName(input,state)||matches.find(m=>m.row.work==='chiikawa')?.row;

@@ -9,6 +9,9 @@ import {specialistPacket,noteSpecialistDelivery} from '../games/emmichy-speciali
 const env={GROQ_API_KEY:process.env.GROQ_API_KEY,GEMINI_API_KEY:process.env.GEMINI_API_KEY,
  GROQ_MODEL:'openai/gpt-oss-120b',GEMINI_MODEL:'gemini-flash-latest'};
 const maxCalls=2,rawOutputs=[];
+// The free Groq account has a small per-minute token bucket. A bounded QA
+// probe can wait between its two requests; the game never adds this delay.
+const probeGapMs=45000;
 let calls=0,rateLimited=false;
 for(const name of Object.keys(PROVIDERS)){
  const original=PROVIDERS[name];
@@ -21,9 +24,10 @@ for(const name of Object.keys(PROVIDERS)){
  };
 }
 const state={history:[],knowledge:{work:'chiikawa'},turn:0};
-const evidence={mode:'real provider generation with candidate server prompt; synthetic inputs; no browser or human evaluation',commit:process.env.GITHUB_SHA||'local',at:new Date().toISOString(),limit:maxCalls,turns:[]};
-for(const input of ['草むしり検定の最初の結果は？','ハチワレの気持ち、えみちいはどう思う？','そのお祝いのクッキーって、手作りなの？']){
+const evidence={mode:'real provider generation with candidate server prompt; synthetic inputs; no browser or human evaluation',commit:process.env.GITHUB_SHA||'local',at:new Date().toISOString(),limit:maxCalls,probeGapMs,turns:[]};
+for(const input of ['セイレーンのデザインのモデルは？','犬張子と金魚の組み合わせ、えみちぃはどう思う？かわいいのにちょっと怖いよね。']){
  if(rateLimited||calls>=maxCalls)break;
+ if(calls)await new Promise(resolve=>setTimeout(resolve,probeGapMs));
  if(/ちいかわ以外/.test(input))state.dialogueControl={concise:true,avoidFandom:true};
  const logs=[],start=Date.now(),rawStart=rawOutputs.length;
  const messages=await game.buildMessages({input,state,session:{turns:state.turn+1}});

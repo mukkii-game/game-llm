@@ -2,6 +2,7 @@
 import {chiikawaRelations} from './emmichy-chiikawa-relations.js';
 import {sceneFacts} from './emmichy-chiikawa-scenes.js';
 import {topicFacts} from './emmichy-chiikawa-news.js';
+import {detailFacts} from './emmichy-chiikawa-detail.js';
 const spoken={
  'reviewed:usagi:yaha':'「ヤハ！」はうさぎの掛け声だよ。',
  'reviewed:hachi:nantoka':'「なんとかなれーッ！」はハチワレのセリフだよ。',
@@ -12,7 +13,7 @@ const spoken={
  'reviewed:trio:prepare':'映画では、セイレーン討伐に向けて、みんなで協力して準備するの。',
  'reviewed:momonga:ear':'映画では、崖から落ちそうなちいかわを、モモンガが耳を引っ張って助けるの。'
 };
-export const knowledgeFacts=Object.freeze([...chiikawaRelations.filter(r=>r.evidence==='official'||r.id==='relation:chiikawa-23'),...sceneFacts,...topicFacts].map(r=>Object.freeze({...r,
+export const knowledgeFacts=Object.freeze([...chiikawaRelations.filter(r=>r.evidence==='official'||r.id==='relation:chiikawa-23'),...sceneFacts,...topicFacts,...detailFacts].map(r=>Object.freeze({...r,
  ...(r.id==='relation:chiikawa-23'?{fact:'島二郎は手を回して水流を起こす。',spoken:'島二郎は手を回して水流を起こすの。',limits:[...r.limits,'虎のしまじろうとは別人'],deliveredVariants:['島二郎が手を回して起こす水流','手を回して水流を起こす島二郎']}:{}),
  spoken:r.id==='relation:chiikawa-23'?'島二郎は手を回して水流を起こすの。':r.spoken||spoken[r.id]||r.fact})));
 
@@ -22,6 +23,10 @@ export const knowledgeById=Object.freeze({get:id=>index.get(id),has:id=>index.ha
 // Capabilities, not raw keyword counts. A question can be factual, a personal
 // view, or an explicit knowledge boundary. All IDs refer to reviewed facts.
 export const knowledgeQuestions=Object.freeze([
+ {id:'tv-opening',kind:'fact',factIds:['reviewed:tv:no-opening'],examples:['テレビアニメのオープニング曲は？'],match:/テレビ|TV|アニメ/i,facet:/オープニング|OP/i,exclude:/映画の|エイガノ/},
+ {id:'siren-design',kind:'fact',factIds:['detail:siren:design'],examples:['セイレーンのデザインのモデルは？'],match:/セイレーン/,facet:/デザイン|モデル|犬張/},
+ {id:'islander-voices',kind:'fact',factIds:['detail:islanders:voices'],examples:['ヒトハとフタバの映画の演技の違いは？'],match:/ヒトハ.*フタバ/,facet:/演技|雰囲気|違い/},
+ {id:'rakko-ranking',kind:'fact',factIds:['detail:rakko:ranking'],examples:['ラッコは討伐ランキング何位？'],match:/ラッコ/,facet:/ランキング|何位/},
  {id:'exam-result',kind:'fact',factIds:['exam:result'],examples:['草むしり検定5級の最初の結果は？'],match:/草むしり|クサムシリ/,facet:/結果|合否|合格|不合格/},
  {id:'exam-gift',kind:'fact',factIds:['exam:cookie','exam:celebrate'],requiresScene:'examination',examples:['草むしり検定のお祝いに何を渡すの？','クサムシリ ケンテイ ノ オイワイ ニ ナニヲ ワタスノ?'],match:/祝い|イワイ|クッキー/,facet:/何.*渡|ナニ.*(?:渡|ワタ)|何.*贈|ナニ.*贈|何.*もら|ナニ.*モラ/},
  {id:'exam-episodes',kind:'fact',factIds:['exam:episodes'],examples:['草むしり検定ってアニメ何話？'],match:/草むしり|クサムシリ|検定|ケンテイ/,facet:/何話|ナンワ|話数/},

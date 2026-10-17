@@ -41,7 +41,7 @@ export function learnPlayerMessage(value,raw){
   const match=t.match(/(?:好きな(?:キャラ|食べ物|ゲーム|漫画|言葉)は|(?:私は|僕は|俺は)?)([^。!?！？]{1,30}?)(?:が|は|を)?(?:大好き|好き|スキ)(?:だ|です|なの|！|!|$)/);
   if(match&&clean(match[1])){const item=match[1].trim();m.likes=unique([...m.likes,item],24);m.dislikes=m.dislikes.filter(x=>fold(x)!==fold(item));}
  }
- const created=t.match(/(?:作った|考えた|発明した)(?:キャラ|能力|技|言葉|名前|ネタ|もの)(?:の名前)?(?:は|が|を)[「『]?([^。!?！？」』]{1,120})/)
+ const created=t.match(/(?:作った|考えた|発明した)(?:キャラ|能力|技|言葉|名前|ネタ|もの)(?:の名前)?(?:は|が)[「『]?([^。!?！？」』]{1,120})/)
   ||t.match(/(?:作った|考えた|発明した)(?:の)?(?:名前)?(?:は|が|を)?[「『]([^。!?！？」』]{1,120})/)
   ||t.match(/(?:私の|僕の|俺の|オレの)?(?:念能力|オリジナルキャラ|作ったキャラ|技の名前)(?:は|を)[「『]?([^。!?！？」』]{1,120})/);
  if(created&&!/[?？]|覚えて|オボエテ|なんだっけ|何だっけ/.test(t)&&clean(created[1]))m.creations=unique([...m.creations,created[1].trim()],12);
@@ -56,6 +56,16 @@ export function learnPlayerMessage(value,raw){
 export function notePlayerReply(value,line){const m=cleanPlayerMemory(value);if(clean(line)&&line.length>=8)m.recentReplies=unique([...m.recentReplies,clean(line)],64);return m;}
 export function answerPlayerQuestion(value,session,raw){
  const memory=learnPlayerMessage(value,raw),q=session?.pendingQuestion,t=text(raw,120),f=fold(t);
+ // Volunteered names work even after the opening question has passed. Match
+ // just the explicit name span, never a whole preceding hobby/food sentence.
+ const volunteered=t.match(/(?:^|[。！!、\s])([^。！!？?、\s「」]{1,20})(?:って|と)呼んで(?:ね|よ|ください)?(?:[。！!]|$)/);
+ if(volunteered){
+  const name=volunteered[1].replace(/^(?:名前は|私の名前は|僕の名前は|俺の名前は|私は|僕は|俺は)/,'');
+  if(clean(name)&&!/^(?:なんて|何と|そう|その名前|好きな名前|あなた|アナタ)$/.test(name)){
+   const changed=memory.nickname!==name;memory.nickname=name;if(q?.type==='name')session.pendingQuestion=null;
+   return {memory,name,...(changed?{reply:`${name}って呼ぶね！ 教えてくれて嬉しい。`}:{})};
+  }
+ }
  if(!q)return {memory};
  if(q.type==='conversation'){
   session.pendingQuestion=null;
