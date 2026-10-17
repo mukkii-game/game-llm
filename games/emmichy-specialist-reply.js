@@ -60,6 +60,7 @@ export function renderSpecialistReply(value,{messages=[]}={}){
   // Concrete story assertions belong to a fact beat. Pure feelings and explicit
   // self-imagination remain free prose; unsupported fragments are omitted.
   const accepted=dialogueSentences(text).filter(sentence=>{
+  if(/^(?:って|ッテ|と思う|トオモウ)/.test(sentence))return false;
   const imagined=/もし|だったら|してくれたら|アタシの想像/.test(sentence);
   const text=sentence;
   const wrongResult=/ハチワレ(?:は|が|だけ)[^、。！？!?]{0,16}(?:不合格|落第|落ち)|ちいかわ(?:は|が|だけ)[^、。！？!?]{0,16}(?<!不)合格(?:した|できた)|ちいかわ(?:は|が|だけ)[^、。！？!?]{0,16}受かった/.test(text);
@@ -70,7 +71,7 @@ export function renderSpecialistReply(value,{messages=[]}={}){
   const story=/原作で|公式で/.test(text)||action||depicted||!question&&/場面|シーン|エピソード/.test(text)&&!personalReference;
   const quoted=/「[^」]+」.{0,12}(?:言|叫|セリフ|台詞)/.test(text)&&!/(?:アタシ|私)(?:も|が|は)?[、\s]*「/.test(text);
   return !wrongResult&&!attributionRepair(text)&&(imagined||inference||!story&&!quoted);
-  }).map(sentence=>/思う|感じる|かもしれ|だろう/.test(sentence)&&!/アタシ|私/.test(sentence)?'アタシの見方だけど、'+sentence:sentence).join(' ');
+  }).map(sentence=>/^(?:ハチワレ|ちいかわ|うさぎ|モモンガ|島二郎|シーサー)(?:は|が|も|、)/.test(sentence)&&/思う|感じる|かもしれ|だろう/.test(sentence)&&!/アタシ|私/.test(sentence)?'アタシの見方だけど、'+sentence:sentence).join(' ');
   if(!accepted||parts.some(p=>fold(p)===fold(accepted)))continue;
   parts.push(accepted.trim());generated++;
  }

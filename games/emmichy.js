@@ -152,7 +152,9 @@ export default {
   providerTimeoutMs: 3500,
   requestBudgetMs: 7200,
   reportSource: true,
-  stopOnRateLimit: true,
+  // Gameplay can use backups; bounded quality probes opt in to stopping on 429.
+  stopOnRateLimit: false,
+  providerCooldown: true,
   // Recent successful live checks used Groq; avoid a failed first wait before it.
   providers: ['groq', 'gemini', 'workers-ai'],
   temperature: 0.45,

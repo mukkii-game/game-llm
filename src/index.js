@@ -4,6 +4,7 @@
 import { GAMES } from '../games/index.js';
 import { PROVIDERS, DEFAULT_ORDER } from './providers.js';
 import { decide } from './decide.js';
+import {providerRetryAt, coolProvider, retrySeconds} from './provider-health.js';
 
 const BASE_ORIGINS = ['https://mukkii-game.github.io', 'http://localhost', 'http://127.0.0.1'];
 // 作品は Cloudflare Workers(静的配信)でも公開する(2026-10-12 Mukkii 決定)。<作品>.mucky-totoro.workers.dev を許す
@@ -17,44 +18,58 @@ function allowedOrigin(req, game) {
   return ok ? origin : '';
 }
 
-function json(body, status, origin) {
+function json(body, status, origin, headers = {}) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       'content-type': 'application/json; charset=utf-8',
       'cache-control': 'no-store',
+      ...headers,
       ...(origin ? { 'access-control-allow-origin': origin, vary: 'Origin' } : {}),
     },
   });
 }
 
 // 成功するまで順番に試す。検証で落ちた返事も「失敗」として次へ進む。
-export async function runChain(env, game, messages, log, { startedAt } = {}) {
+export async function runChain(env, game, messages, log, { startedAt, stopOnRateLimit = game.stopOnRateLimit === true } = {}) {
   const order = (env.PROVIDERS ? env.PROVIDERS.split(',') : game.providers ?? DEFAULT_ORDER).map((s) => s.trim());
   const opt = { temperature: game.temperature ?? 0.9, maxTokens: game.maxTokens ?? 200, timeoutMs: game.providerTimeoutMs ?? 9000 };
   const outputSchema = typeof game.outputSchema === 'function' ? game.outputSchema(messages) : null;
   if(outputSchema)opt.outputSchema=outputSchema;
   const deadline = game.requestBudgetMs == null ? null : (startedAt ?? Date.now()) + game.requestBudgetMs;
+  let earliestRetry = Infinity, attemptedOtherFailure = false;
   for (const name of order) {
     const call = PROVIDERS[name];
     if (!call) continue;
     const t0 = Date.now();
+    if (game.providerCooldown === true && providerRetryAt(env, name) > t0) {
+      earliestRetry = Math.min(earliestRetry, providerRetryAt(env, name));
+      log({provider:name, source:'llm', ok:false, reason:'cooldown', ms:0});
+      continue;
+    }
     const remaining = deadline === null ? opt.timeoutMs : deadline - t0;
     if (deadline !== null && remaining <= 0) break;
-    const attemptOpt = deadline === null ? opt : { ...opt, timeoutMs: Math.min(opt.timeoutMs, remaining) };
+    let usage = {};
+    const attemptOpt = {...opt, timeoutMs: Math.min(opt.timeoutMs, remaining), onUsage: counters => {usage = {...usage, ...counters};}};
     try {
       const validated = game.validate(await call(env, messages, attemptOpt), {messages});
       const structured = validated !== null && typeof validated === 'object';
       const text = structured ? validated.text : validated;
       const source = structured && ['llm', 'mixed', 'authored'].includes(validated.source) ? validated.source : 'llm';
       const accepted = typeof text === 'string' && Boolean(text);
-      log({ provider: name, source, ok: accepted, reason: structured && validated.reason ? String(validated.reason).slice(0, 40) : accepted ? '' : 'rejected', ms: Date.now() - t0 });
+      log({ provider: name, source, ok: accepted, reason: structured && validated.reason ? String(validated.reason).slice(0, 40) : accepted ? '' : 'rejected', ms: Date.now() - t0, ...usage });
       if (accepted) return { text, provider: name, ...(structured || game.reportSource === true ? { source } : {}) };
+      attemptedOtherFailure = true;
     } catch (e) {
-      log({ provider: name, source: 'llm', ok: false, reason: String(e.message || e).slice(0, 40), ms: Date.now() - t0 });
-      if (game.stopOnRateLimit === true && e.message === 'http-429') return { error: 'rate-limited', provider: name };
+      const limited = e.message === 'http-429' || e.status === 429 || e.statusCode === 429;
+      log({ provider: name, source: 'llm', ok: false, reason: limited ? 'http-429' : String(e.message || e).slice(0, 40), ms: Date.now() - t0, ...usage });
+      if (limited) {
+        if (game.providerCooldown === true) earliestRetry = Math.min(earliestRetry, coolProvider(env, name, e.retryAfterSeconds));
+        if (stopOnRateLimit) return { error: 'rate-limited', provider: name };
+      } else if (!['no-key','no-binding'].includes(e.message)) attemptedOtherFailure = true;
     }
   }
+  if (Number.isFinite(earliestRetry) && !attemptedOtherFailure) return {error:'rate-limited', retryAfterSeconds:Math.max(1, Math.ceil((earliestRetry-Date.now())/1000))};
   return null;
 }
 
@@ -84,7 +99,7 @@ export default {
     if (env.RL) {
       const ip = req.headers.get('cf-connecting-ip') || 'x';
       const { success } = await env.RL.limit({ key: `${m[1]}:${ip}` });
-      if (!success) return json({ error: 'rate-limited' }, 429, origin);
+      if (!success) return json({ error: 'rate-limited', retryAfterSeconds:60 }, 429, origin, {'retry-after':'60','access-control-expose-headers':'Retry-After'});
     }
     if (Number(req.headers.get('content-length') || 0) > 40000) return json({ error: 'too-large' }, 413, origin);
 
@@ -100,7 +115,7 @@ export default {
     const log = (o) => console.log(JSON.stringify({ game: m[1], ...o }));
     const result = await runChain(env, game, messages, log, { startedAt });
     if (!result) return json({ error: 'unavailable' }, 502, origin);
-    if (result.error === 'rate-limited') return json(result, 429, origin);
+    if (result.error === 'rate-limited') return json(result, 429, origin, {'retry-after':String(retrySeconds(result.retryAfterSeconds)), 'access-control-expose-headers':'Retry-After'});
     return json(result, 200, origin);
   },
 };

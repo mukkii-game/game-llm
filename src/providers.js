@@ -1,5 +1,30 @@
 // AI の呼び先。どれも「text を返す / 失敗したら throw」に揃える。
 const TIMEOUT_MS = 9000;
+import {retrySeconds} from './provider-health.js';
+
+function checked(response, opt) {
+  if (response.ok) return;
+  const error = new Error(`http-${response.status}`);
+  if (response.status === 429) error.retryAfterSeconds = retrySeconds(response.headers.get('retry-after'));
+  // Only numeric counters: no response body, credentials, account IDs or prompt.
+  opt.onUsage?.(quotaCounters(response.headers));
+  throw error;
+}
+function quotaCounters(headers) {
+  const out = {};
+  for (const [header, key] of [['x-ratelimit-limit-requests','requestLimit'],['x-ratelimit-remaining-requests','requestsRemaining'],['x-ratelimit-limit-tokens','tokenLimit'],['x-ratelimit-remaining-tokens','tokensRemaining']]) {
+    const value = headers.get(header);
+    if (value !== null && Number.isFinite(Number(value))) out[key] = Number(value);
+  }
+  return out;
+}
+function usageCounters(usage, inputKey, outputKey, totalKey) {
+  const out = {};
+  for (const [key, source] of [['inputTokens',inputKey],['outputTokens',outputKey],['totalTokens',totalKey]]) {
+    if (Number.isFinite(usage?.[source])) out[key] = usage[source];
+  }
+  return out;
+}
 
 export async function groq(env, messages, opt) {
   if (!env.GROQ_API_KEY) throw new Error('no-key');
@@ -16,8 +41,9 @@ export async function groq(env, messages, opt) {
     }),
     signal: AbortSignal.timeout(opt.timeoutMs ?? TIMEOUT_MS),
   });
-  if (!r.ok) throw new Error(`http-${r.status}`);
+  checked(r, opt);
   const out = await r.json();
+  opt.onUsage?.({...quotaCounters(r.headers), ...usageCounters(out.usage, 'prompt_tokens', 'completion_tokens', 'total_tokens')});
   return out.choices?.[0]?.message?.content ?? '';
 }
 
@@ -39,8 +65,9 @@ export async function gemini(env, messages, opt) {
     }),
     signal: AbortSignal.timeout(opt.timeoutMs ?? TIMEOUT_MS),
   });
-  if (!r.ok) throw new Error(`http-${r.status}`);
+  checked(r, opt);
   const out = await r.json();
+  opt.onUsage?.(usageCounters(out.usageMetadata, 'promptTokenCount', 'candidatesTokenCount', 'totalTokenCount'));
   return (out.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? '').join('');
 }
 

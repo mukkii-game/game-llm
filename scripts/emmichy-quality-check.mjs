@@ -1,4 +1,4 @@
-// Explicit manual CI quality probe: synthetic game inputs, max three provider
+// Explicit manual CI quality probe: synthetic game inputs, max two provider
 // calls TOTAL, stop immediately on 429. No deployment or credential output.
 import fs from 'node:fs/promises';
 import game from '../games/emmichy.js';
@@ -27,7 +27,7 @@ for(const input of ['草むしり検定の最初の結果は？','ハチワレ�
  if(/ちいかわ以外/.test(input))state.dialogueControl={concise:true,avoidFandom:true};
  const logs=[],start=Date.now(),rawStart=rawOutputs.length;
  const messages=await game.buildMessages({input,state,session:{turns:state.turn+1}});
- const result=await runChain(env,game,messages,entry=>logs.push(entry),{startedAt:start});
+ const result=await runChain(env,game,messages,entry=>logs.push(entry),{startedAt:start,stopOnRateLimit:true});
  evidence.turns.push({input,systemCharacters:messages[0].content.length,history:messages.slice(1,-1),wallMs:Date.now()-start,result,attempts:logs,rawOutputs:rawOutputs.slice(rawStart)});
  if(result?.error==='rate-limited'||!result?.text)break;
  state.history.push({role:'user',text:input},{role:'enny',text:result.text});
