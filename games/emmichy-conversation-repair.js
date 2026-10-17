@@ -1,4 +1,5 @@
 import {requestsChiikawa} from './emmichy-topic-intent.js';
+import {namedTopicRequest} from './emmichy-names.js';
 // Conversation acts are handled before lexical fandom cues. A player's complaint
 // is not a food preference, a name, or an invitation to another monologue.
 export const foldRepair=s=>String(s||'').normalize('NFKC').replace(/[ぁ-ゖ]/g,c=>String.fromCharCode(c.charCodeAt(0)+96)).replace(/\s/g,'');
@@ -30,10 +31,11 @@ export function feedbackIntent(input){
  return '';
 }
 function topicId(t){return /運行|ウンコウ|長音|長イ音/.test(t)?'jp:long-vowel':/橋|箸|ハシ/.test(t)?'jp:accent':/弟|オトウト/.test(t)?'profile:family':/ノート/.test(t)?'profile:notebook':/スウェーデン|ヨーテボリ/.test(t)?'profile:home':null;}
-export function updateDialogueControl(value,input){
+export function updateDialogueControl(value,input,state={}){
  const c=cleanDialogueControl(value),t=foldRepair(input),intent=feedbackIntent(input);
  const explicitResume=(requestsChiikawa(input)||/^(?:ハチワレ|シーサー|ウサギ|モモンガ)[!?？。]*$/.test(t)||/(?:チイカワ|ハチワレ|シーサー|ウサギ|モモンガ).{0,24}(?:話シタイ|話シテ|話ソウ|ハナシテ|ハナソウ|話シヨ|話シナイ|話ニ戻|ハナシタイ|続ケ|ツヅケ|ドコガ好キ|ドコガスキ)/.test(t))&&!intent;
  if(explicitResume)c.avoidFandom=false;
+ const request=namedTopicRequest(input,state);if(request&&!request.chiikawa)c.avoidFandom=true;
  if(/(?:チイカワ|漫画|マンガ|ソノ話).{0,16}(?:以外|イガイ(?!イ)|ヤメ|モウイイ)|別ノ話|ベツノ話/.test(t))c.avoidFandom=true;
  c.quiet=Boolean(intent);if(intent)c.lastIntent=intent;else if(!/^(?:本当|ホントウ|ホント)/.test(t))c.lastIntent='';
  if(intent==='length')c.concise=true;

@@ -58,7 +58,7 @@ export function answerPlayerQuestion(value,session,raw){
  const memory=learnPlayerMessage(value,raw),q=session?.pendingQuestion,t=text(raw,120),f=fold(t);
  // Volunteered names work even after the opening question has passed. Match
  // just the explicit name span, never a whole preceding hobby/food sentence.
- const volunteered=t.match(/(?:^|[。！!、\s])([^。！!？?、\s「」]{1,20})(?:って|と)呼んで(?:ね|よ|ください)?(?:[。！!]|$)/);
+ const volunteered=t.match(/(?:^|[。！!、\s])([^。！!？?、\s「」]{1,20})(?:って|と)呼んで(?:ね|よ|ください)?(?:[。！!]|$)/)||t.match(/^(?:私|僕|俺|ワタシ|ボク|オレ)(?:は|ハ)([ァ-ヶー]{2,12}|[A-Za-z][A-Za-z0-9_-]{1,15})(?:だよ|です)?[。！!]/);
  if(volunteered){
   const name=volunteered[1].replace(/^(?:名前は|私の名前は|僕の名前は|俺の名前は|私は|僕は|俺は)/,'');
   if(clean(name)&&!/^(?:なんて|何と|そう|その名前|好きな名前|あなた|アナタ)$/.test(name)){

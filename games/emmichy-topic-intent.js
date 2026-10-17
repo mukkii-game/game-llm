@@ -1,4 +1,8 @@
 const fold=s=>String(s||'').normalize('NFKC').replace(/[ぁ-ゖ]/g,c=>String.fromCharCode(c.charCodeAt(0)+96)).replace(/\s/g,'');
+export function requestedTopic(input){
+ const match=String(input||'').normalize('NFKC').replace(/\s/g,'').match(/(?:今は|今ハ|イマハ)(.{1,30}?)(?:の話|ノ話|ノハナシ)/);
+ return (match?.[1]||'').replace(/^(?:私の|私ノ|僕の|俺の|ワタシノ|ボクノ|オレノ)/,'');
+}
 // A refusal of other manga followed by an explicit Chiikawa request is an
 // invitation to this topic. Keep the scope of the negative clause local.
 export function requestsChiikawa(input){

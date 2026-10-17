@@ -51,12 +51,16 @@ export function personalFanReply(input,state={}){
  const connected=everydayFanConnection(input,state);if(connected)return connected;
  const t=fold(input),chii=/チイカワ|ハチワレ|シーサー|ウサギ|モモンガ/.test(t)||state.knowledge?.work==='chiikawa'||Boolean(state.specialist?.focus);
  if(!chii||/嫌イ|キライ|病気|相談|事故|死ニ|亡ク/.test(t))return null;
+ if(/疲|ツカレ/.test(t)&&/チイカワ/.test(t)&&/見ナガラ|ミナガラ|見タイ|ミタイ|ボーット/.test(t))return {subject:'quiet-viewing',text:'おつかれさま。今日は、ちいかわを見てゆっくりしよう。何か面白いこと言わなくてもいいよ。アタシも、好きな子たちをぼんやり眺めたい時があるの。'};
  const conversation=fanConversationReply(input,state);if(conversation)return conversation;
  const question=t.split(/[。!！]/).filter(Boolean).at(-1)||t;
  const characterView=/(?:ドコ|ドンナトコロ|ドウイウトコロ).{0,4}(?:好キ|スキ|優シ|ヤサシ)|好キナトコロ|魅力|性格/.test(question);
  const namedFocus=focusName(input,state)?.name;
  const focused=/^(?:ソノ|アノ)子/.test(question)||namedFocus==='ちいかわ'&&state.specialist?.subject==='ハチワレ'&&/二人|関係|気ニカケ/.test(t)?state.specialist?.subject:namedFocus||state.specialist?.subject;
- if(focused==='ハチワレ'&&/何|ナニ|ドンナ/.test(question)&&/食ベタイ|タベタイ|作ッテホシイ/.test(question))return {subject:'hachiware-meal-wish',text:'アタシなら、あったかいスープを一緒に食べたいな。ハチワレが何を作ったかの話じゃなくて、アタシの食べたいものね。おかわり、って日本語だけ先に準備しちゃう。'};
+ if(/(?:エミー|エミチ[イィ]).{0,4}ハチワレナラ/.test(t)&&/声|コエ|ナンテ/.test(question))return {subject:'hachiware-imagined-speaker',text:'アタシなら、頑張ってたの見てたよ、って伝えたいな。急いで明るい話に変えず、そばに座っていられたらいい。これは、アタシがかけたい言葉ね。'};
+ if(focused==='ハチワレ'&&/隣ニ|ソバニ|一緒/.test(question)&&/イタラ|イレバ|ナラ/.test(question)&&/何|ナニ|ドウ/.test(question))return {subject:'hachiware-imagined-company',text:'アタシの想像なら、あったかいものを飲みながら一緒に休んでほしいな。話せない時も、隣にいてくれたら嬉しい。元気になったら、一緒に漫画を開きたい！'};
+ if(focused==='ハチワレ'&&/何|ナニ|ドンナ/.test(question)&&/食ベタイ|タベタイ|作ッテホシイ|作ッテクレタラ/.test(question))return {subject:'hachiware-meal-wish',text:'もしハチワレと一緒に食べられたら、あったかいスープがいいな。「おかわり」って言う準備だけは、もうできてる。えへへ。'};
+ if(focused==='ハチワレ'&&(/励マ|ハゲマ/.test(question)||/ドンナ言葉|ナンテ|声/.test(question)&&/クレソウ|カケ/.test(question)))return {subject:'hachiware-imagined-support',text:'もし声をかけてもらえるなら、頑張ったね、って一緒に休んでくれたら嬉しいな。アタシの想像だけど、すぐ元気になれなくても隣にいてほしい。'};
  if(focused==='ハチワレ'&&/優シ|ヤサシ/.test(t)&&/好キ|スキ/.test(t))return {subject:'hachiware-kindness',text:'優しいところ、アタシも好き！ 気にかけてもらえると、失敗した日も一人じゃないって思えそう。ハチワレに励ましてもらう想像したら、顔がゆるんじゃう。'};
  if(focused==='ハチワレ'&&state.specialist?.focus==='relation:chiikawa-9'&&/ソノ|モウ少シ/.test(question))return {subject:'hachiware-photo',text:'小さい思い出を残したい気持ちに、アタシもなるの。すごい景色だけじゃなくて、一緒にいた時間も忘れたくないな。これはアタシの気持ちね。'};
  if(focused==='ハチワレ'&&/料理.*ドウ思|料理.*ドウオモ/.test(t))return {subject:'hachiware-food',text:'料理って、作った人の気持ちも一緒にもらう感じがして好き。もしハチワレと一緒に食べられたら、次はアタシも作りたいな。'};
@@ -85,6 +89,7 @@ export function personalFanReply(input,state={}){
  return null;
 }
 export function selectChiikawaBridge(input,state={}){
+ if(state.dialogueControl?.avoidFandom)return null;
  const t=fold(input);
  if(/ツライ|苦シ|病気|事故|亡ク|死ニ|相談|嫌イ|キライ|苦手|ヤメ|イガイ(?!イ)|以外|バカリ|違ウ|チガウ|訂正|好キジャナイ|スキジャナイ|好キデハナイ|スキデハナイ/.test(t)||/ヨリ.{0,20}(?:話|ハナシ).{0,10}(?:シタイ|シヨウ)/.test(t))return null;
  const history=(state.dialogue||state.history||[]).filter(h=>h.role==='enny').slice(-8).map(h=>fold(h.text)).concat((state.playerMemory?.recentReplies||[]).slice(-12).map(fold)).join('');

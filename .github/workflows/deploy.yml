@@ -9,6 +9,11 @@ on:
         type: choice
         options: [deploy, quality-check]
         default: deploy
+      quality_scenario:
+        description: 'Unpublished check: default two calls, or one six-turn conversation'
+        type: choice
+        options: [two, conversation-six]
+        default: two
 jobs:
   deploy:
     if: github.ref == 'refs/heads/main' && inputs.mode != 'quality-check'
@@ -32,7 +37,7 @@ jobs:
   quality-check:
     if: github.event_name == 'workflow_dispatch' && inputs.mode == 'quality-check'
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 7
     permissions:
       contents: read
     steps:
@@ -42,6 +47,7 @@ jobs:
       - run: node --test test/*.test.js
       - run: node scripts/emmichy-quality-check.mjs
         env:
+          QUALITY_SCENARIO: ${{ inputs.quality_scenario }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       - uses: actions/upload-artifact@v4

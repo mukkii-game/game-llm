@@ -1,4 +1,4 @@
-// Explicit manual CI quality probe: synthetic game inputs, max two provider
+// Explicit manual CI quality probe: synthetic game inputs, bounded provider
 // calls TOTAL, stop immediately on 429. No deployment or credential output.
 import fs from 'node:fs/promises';
 import game from '../games/emmichy.js';
@@ -8,7 +8,8 @@ import {selectKnowledge} from '../games/emmichy-fandom.js';
 import {specialistPacket,noteSpecialistDelivery} from '../games/emmichy-specialist.js';
 const env={GROQ_API_KEY:process.env.GROQ_API_KEY,GEMINI_API_KEY:process.env.GEMINI_API_KEY,
  GROQ_MODEL:'openai/gpt-oss-120b',GEMINI_MODEL:'gemini-flash-latest'};
-const maxCalls=2,rawOutputs=[];
+const conversation=process.env.QUALITY_SCENARIO==='conversation-six';
+const maxCalls=conversation?6:2,rawOutputs=[];
 // The free Groq account has a small per-minute token bucket. A bounded QA
 // probe can wait between its two requests; the game never adds this delay.
 const probeGapMs=45000;
@@ -25,7 +26,15 @@ for(const name of Object.keys(PROVIDERS)){
 }
 const state={history:[],knowledge:{work:'chiikawa'},turn:0};
 const evidence={mode:'real provider generation with candidate server prompt; synthetic inputs; no browser or human evaluation',commit:process.env.GITHUB_SHA||'local',at:new Date().toISOString(),limit:maxCalls,probeGapMs,turns:[]};
-for(const input of ['セイレーンのデザインのモデルは？','犬張子と金魚の組み合わせ、えみちぃはどう思う？かわいいのにちょっと怖いよね。']){
+const inputs=conversation?[
+ 'ちいかわとハチワレがエジプトの本を見る回、二人で本を読む感じが好き。',
+ '誰かと同じページを見ると、自分が見なかったところも気づけそうだよね。えみちぃはどう思う？',
+ '辞書を引く前に相手の想像も聞いてみたいな。',
+ 'もし一緒に同じ本を読むなら、どんな本がいい？',
+ 'セイレーンの顔のモデルは？',
+ '犬張子と金魚の組み合わせ、えみちぃはかわいいと怖い、どっちを強く感じる？'
+]:['セイレーンのデザインのモデルは？','犬張子と金魚の組み合わせ、えみちぃはどう思う？かわいいのにちょっと怖いよね。'];
+for(const input of inputs){
  if(rateLimited||calls>=maxCalls)break;
  if(calls)await new Promise(resolve=>setTimeout(resolve,probeGapMs));
  if(/ちいかわ以外/.test(input))state.dialogueControl={concise:true,avoidFandom:true};

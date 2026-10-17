@@ -16,7 +16,7 @@ export const detailScenes=Object.freeze([
  {id:'siren-design',cues:['セイレーンのデザイン','セイレーンのモデル','犬張子','犬張り子'],ids:['detail:siren:design'],label:'セイレーンのデザイン'},
  {id:'islander-voices',cues:['ヒトハとフタバ','ヒトハトフタバ'],ids:['detail:islanders:voices'],label:'ヒトハとフタバの演技'},
  {id:'flyer',cues:['チラシ'],ids:['detail:film:flyer'],participants:['ちいかわ','ハチワレ'],label:'映画のチラシを見る仕草'},
- {id:'pudding',cues:['かためのプリン','固めのプリン','プリンの上'],ids:['detail:anime:pudding'],participants:['ちいかわ','うさぎ'],label:'第1話のプリン'},
+ {id:'pudding',cues:['かためのプリン','固めのプリン','プリンの上','第1話のプリン','第1話ノプリン','プリンの場面','プリンノ場面'],ids:['detail:anime:pudding'],participants:['ちいかわ','うさぎ'],label:'第1話のプリン'},
  {id:'egypt-book',cues:['エジプト','スフィンクス'],ids:['detail:anime:book'],participants:['ちいかわ','ハチワレ'],label:'第2話の本'},
  {id:'pie-stew',cues:['パイシチュー'],ids:['detail:anime:pie'],participants:['うさぎ'],label:'第3話のパイシチュー'}
 ]);

@@ -1,7 +1,8 @@
 import {nameData} from './emmichy-name-data.js';
 import {placeNames} from './emmichy-places.js';
 import {gameNames} from './emmichy-game-names.js';
-import {requestsChiikawa} from './emmichy-topic-intent.js';
+import {requestsChiikawa,requestedTopic} from './emmichy-topic-intent.js';
+import {detailScenes} from './emmichy-chiikawa-detail.js';
 export const foldName=s=>String(s||'').normalize('NFKC').replace(/[ぁ-ゖ]/g,c=>String.fromCharCode(c.charCodeAt(0)+96)).toLowerCase().replace(/[\s・×＝=\-:：'’"「」]/g,'');
 export const NAME_REACTION_MS=750;
 const trie=new Map(),exact=[];
@@ -12,9 +13,11 @@ for(const name of gameNames)insert(name,{id:`steam:${name}`,name,reading:name,wo
 const distinct=matches=>[...new Map(matches.map(m=>[m.row.id,m])).values()];
 const ownedNames=new Map([...nameData,...placeNames,...gameNames.map(name=>({id:`steam:${name}`,name,reading:name,work:'games'}))].map(row=>[row.id,row]));
 export const nameFromId=id=>ownedNames.get(id)||null;
-function scan(value){const input=foldName(value),found=[];for(let i=0;i<input.length;i++){let node=trie;for(let j=i;j<input.length;j++){node=node.get(input[j]);if(!node)break;for(const m of node.get('')||[]){
+function scan(value){const input=foldName(value),found=[],runs=String(value).normalize('NFKC').match(/[ァ-ヶー]{2,}/g)||[];for(let i=0;i<input.length;i++){let node=trie;for(let j=i;j<input.length;j++){node=node.get(input[j]);if(!node)break;for(const m of node.get('')||[]){
  if(m.key==='キュウ'&&/[0-9一二三四五六七八九十]/.test(input[i-1]||''))continue; // A grade/count is not Hunter's character.
  if(m.key==='イカ'&&/^(?:ナク|ナイ|ナケレ)/.test(input.slice(j+1)))continue; // うまくいかなくても is not squid.
+ if(m.row.name==='郎'&&!/郎|ラーメン|働|店|ロウ(?:ノ|デ|ニ|ヘ|ッテ)/.test(String(value))&&input!==m.key)continue;
+ if(m.key.length<=4){const containing=runs.map(foldName).filter(key=>key.includes(m.key));if(containing.length&&containing.every(key=>{const tail=key.slice(key.indexOf(m.key)+m.key.length);return tail&&!/^(?:ノ|ハ|ガ|ヲ|ト|ニ|モ|ッテ|デ|[!！?？])/.test(tail);}))continue;}
  if(/^[a-z0-9]+$/.test(m.key)&&m.key.length<=5&&!new RegExp(`\\b${m.key}\\b`,'i').test(String(value)))continue;
  if(m.row.work==='japan'&&m.key.length<4&&!String(value).includes(m.row.name)&&input!==m.key&&!/旅行|観光|温泉|空港|地名|県|市/.test(value))continue;
  if(m.row.category==='context-item'&&m.key.length<=3&&input!==m.key&&!String(value).normalize('NFKC').includes(m.alias))continue;
@@ -30,6 +33,7 @@ function inContext(row,input,work){
 }
 const pronounReference=(m,input,state)=>/あのこ|あの子/.test(m.row.name)&&state.specialist?.subject&&!/あのこ|あの子/.test(state.specialist.subject)&&/あの子(?:が|の|を|に)|アノ子(?:ガ|ノ|ヲ|ニ)/.test(input);
 export function exactNames(input,state={}){const work=workIn(state);return distinct(scan(input)).filter(m=>inContext(m.row,input,work)&&!pronounReference(m,input,state)).map(m=>m.row);}
+export function namedTopicRequest(input,state={}){const label=requestedTopic(input);return label?{label,chiikawa:exactNames(label,state).some(n=>n.work==='chiikawa')||detailScenes.some(s=>s.cues.some(c=>foldName(label).includes(foldName(c))))||state.specialist?.scene==='examination'&&/クッキー|検定|合格|勉強|祝い/.test(label)||Boolean(state.specialist?.scene&&/^(?:ソノ|コノ|アノ|その|この|あの)/.test(label))}:null;}
 // A work title provides context; a named character in the question owns the answer.
 export function focusName(input,state={}){
  const names=exactNames(input,state),chii=names.filter(n=>n.work==='chiikawa');

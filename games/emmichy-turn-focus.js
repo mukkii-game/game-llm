@@ -8,8 +8,11 @@ export function currentTurnClause(raw){
 }
 export function currentTurnFocus(raw){
  const last=foldTurn(currentTurnClause(raw));
+ if(/友達ニ連絡|友ダチニ連絡|トモダチニレンラク/.test(last))return 'player-plan';
  if(/[「『]ッ[」』]|小サイ[「『]?ッ|促音/.test(last)&&/難|ムズカ|覚|オボ|練習/.test(last))return 'learner';
  if(/パン屋|塩パン|焼キタテ/.test(last))return 'bakery';
+ if(/シナモンロール/.test(foldTurn(raw))&&/買ッタ|温メ|食ベ|タベ/.test(foldTurn(raw)))return 'bakery';
+ if(/パン屋|塩パン|焼キタテ/.test(foldTurn(raw))&&!/映画|チイカワ|ハチワレ|ウサギ|日本語|ニホンゴ/.test(last))return 'bakery';
  if(/(?:今日|キョウ).{0,12}(?:仕事|シゴト)|(?:仕事|シゴト).{0,8}(?:疲|ツカレ)/.test(last)&&!/エミチ|アナタ|君/.test(last))return 'tired';
  return '';
 }

@@ -1,13 +1,15 @@
 // Small owned evidence packets. The browser sends IDs/state, never new canon.
 import {waterPlayCorrection} from './emmichy-fandom.js';
-import {exactNames,focusName} from './emmichy-names.js';
+import {exactNames,focusName,namedTopicRequest} from './emmichy-names.js';
 import {substantiveHistory} from './emmichy-dialogue-history.js';
 import {feedbackIntent} from './emmichy-conversation-repair.js';
 import {sceneFacts} from './emmichy-chiikawa-scenes.js';
 import {topicFacts} from './emmichy-chiikawa-news.js';
 import {fanConversation} from './emmichy-fan-conversation.js';
-import {currentTurnFocus} from './emmichy-turn-focus.js';
+import {currentTurnFocus,currentTurnClause} from './emmichy-turn-focus.js';
 import {detailScenes} from './emmichy-chiikawa-detail.js';
+import {sceneConversationReply} from './emmichy-scene-conversation.js';
+import {accessoryCue,profileReply} from './emmichy-profile.js';
 const fold=s=>String(s||'').normalize('NFKC').replace(/[ぁ-ゖ]/g,c=>String.fromCharCode(c.charCodeAt(0)+96)).replace(/[\s。、!?！？「」]/g,'').toLowerCase();
 import {knowledgeFacts,knowledgeById,matchingKnowledgeQuestions} from './emmichy-knowledge-catalog.js';
 export const specialistFacts=knowledgeFacts;
@@ -31,18 +33,24 @@ const scenes=[...detailScenes,
 export function cleanSpecialist(value){
  const v=value&&typeof value==='object'?value:{};
  return {subject:records.some(r=>r.subject===v.subject)?v.subject:'',scene:scenes.some(s=>s.id===v.scene)?v.scene:'',
-  focus:byId.has(v.focus)?v.focus:'',said:Array.isArray(v.said)?[...new Set(v.said.filter(id=>byId.has(id)))].slice(-32):[],...(v.spoilers===false?{spoilers:false}:{})};
+  focus:byId.has(v.focus)?v.focus:'',deliveredFocus:byId.has(v.deliveredFocus)?v.deliveredFocus:byId.has(v.focus)&&Array.isArray(v.said)&&v.said.includes(v.focus)?v.focus:'',said:Array.isArray(v.said)?[...new Set(v.said.filter(id=>byId.has(id)))].slice(-32):[],...(v.spoilers===false?{spoilers:false}:{})};
 }
 export function specialistPacket(input,state={},now=new Date()){
  const t=fold(input),memory=cleanSpecialist(state.specialist);
+ const request=namedTopicRequest(input,state);
+ const leaving=Boolean(request&&!request.chiikawa)||/別ノ話|他ノ話|ホカノ話|(?:チイカワ|漫画).{0,12}(?:以外|イガイ(?!イ)|ヤメ)|話題.{0,6}変/.test(t);
+ if(leaving)return {active:false,memory:{...memory,subject:'',scene:'',focus:'',deliveredFocus:''},evidence:[],gap:''};
  const recognition=memory.subject||memory.scene?{...state,knowledge:{...state.knowledge,work:'chiikawa'}}:state;
  const names=exactNames(input,recognition);
  const chii=focusName(input,recognition),other=names.find(n=>n.work!=='chiikawa');
  const previousScene=scenes.find(s=>s.id===memory.scene);
  const conversation=fanConversation(input,{...state,specialist:memory});
- const selfTopic=Boolean(currentTurnFocus(input))||!chii&&(/日本語|ニホンゴ|スウェーデン|ヨーテボリ|家族|カゾク/.test(t)&&!/日本語.{0,12}(?:ジャナク|デハナク)/.test(t)||/エミー|エミチ|emmichy/.test(t)&&!/ドウ思|ドウオモ/.test(t)&&!conversation);
+ const ownProfile=profileReply(input,state);
+ const selfTopic=accessoryCue(input)||Boolean(currentTurnFocus(input))||!chii&&Boolean(ownProfile&&!['profile:fandom','profile:hachiware-preference'].includes(ownProfile.id));
  const matches=c=>['OP','ED'].includes(c)?new RegExp(`\\b${c}\\b`,'i').test(String(input)):t.includes(fold(c));
  let explicit=scenes.find(s=>s.cues.some(matches));
+ const lastClause=fold(currentTurnClause(input));
+ if(explicit?.participants&&chii&&!explicit.participants.includes(chii.name)&&lastClause.includes(fold(chii.name))&&!explicit.cues.some(c=>lastClause.includes(fold(c))))explicit=null;
  const tvRequested=/アニメ|テレビ|tv/.test(t)&&(!/映画|エイガ/.test(t)||/(?:映画|エイガ)(?:デハナク|ジャナク|ジャナイ|以外|イガイ)/.test(t));
  if(explicit?.id==='opening'&&tvRequested)explicit=scenes.find(s=>s.id==='tv-opening');
  const supportedQuestion=matchingKnowledgeQuestions(input,{scene:explicit?.id||previousScene?.id}).find(q=>q.kind==='fact');
@@ -50,10 +58,15 @@ export function specialistPacket(input,state={},now=new Date()){
  const facet=previousScene&&(/^(ドンナ|ドノ|ドレ)|手作リ|作ッタ|買ッタ|点数|得点|ドウヤッテ/.test(t)||previousScene.ids.some(id=>byId.get(id)?.cues.some(c=>fold(c).length>=2&&t.includes(fold(c)))));
  const mixedQuestion=other&&!['japan','games'].includes(other.work)&&/[?？]|何|ナニ|ナゼ|なぜ|どう|教えて/.test(input);
  const spoilerRequest=/ネタバレ/.test(t);
- const active=!selfTopic&&!mixedQuestion&&Boolean(chii||!other&&(explicit||supportedQuestion&&( /[?？]|何|誰|どこ|話して|話をして|ハナシテ/.test(input))||(follow||facet||spoilerRequest)&&(memory.subject||memory.scene)));
+ const sceneOpinion=previousScene&&/細カ|コマカ|気配|好キ|スキ|思ウ|オモウ|感ジ|カンジ|気持|キモチ|特別|トクベツ|手ノ動|見返/.test(t);
+ const dailyChange=!chii&&!explicit&&/(?:今日|昨日|キョウ|キノウ|トコロデ).{0,35}(?:食ベタ|買ッタ|行ッタ|散歩シタ|見タ)/.test(t);
+ // A scene is shared context, not something the player must re-trigger with
+ // a keyword on every reply. Only an actual new subject/act releases it.
+ const sceneContinuation=Boolean(previousScene&&!other&&!selfTopic&&!dailyChange);
+ const active=!selfTopic&&!mixedQuestion&&!dailyChange&&Boolean(chii||sceneContinuation||!other&&(explicit||supportedQuestion&&( /[?？]|何|誰|どこ|話して|話をして|ハナシテ/.test(input))||(follow||facet||spoilerRequest||sceneOpinion)&&(memory.subject||memory.scene)));
  if(!active){
   const changed=other||selfTopic||/別ノ話|他ノ話|ホカノ話|以外|イガイ|話題.{0,6}変|話ヲ変/.test(t);
-  return {active:false,memory:changed?{...memory,subject:'',scene:'',focus:''}:memory,evidence:[],gap:''};
+  return {active:false,memory:changed||dailyChange?{...memory,subject:'',scene:'',focus:'',deliveredFocus:''}:memory,evidence:[],gap:''};
  }
  const genericChii=chii?.name==='ちいかわ'&&!/本人|(?:ちいかわ|チイカワ)(?:が|は|ガ|ハ)|好きなところ|好キナトコロ/.test(input);
  let subject=chii&&records.some(r=>r.subject.startsWith(chii.name))&&(!genericChii||!memory.subject)?chii.name:memory.subject;
@@ -64,12 +77,13 @@ export function specialistPacket(input,state={},now=new Date()){
  const changedCharacter=chii&&!genericChii&&chii.name!==memory.subject&&!participant;
  const characterProfile=/本人|普段|全体|キャラとして|性格|魅力/.test(input);
  const reference=/^(ソレ|ソノ|アレ|アノ|ソウ|違|チガ|オナジ)|ソコデ/.test(t)||spoilerRequest||Boolean(feedbackIntent(input));
- let scene=explicit||(!characterProfile&&((follow||facet)&&!changedCharacter||reference||participant)?previousScene:null);
+ let scene=explicit||(!characterProfile&&((follow||facet||sceneContinuation)&&!changedCharacter||reference||participant)?previousScene:null);
  let selected=[];
  if(!scene&&memory.subject&&/具体的.*場面|印象ニ残ル場面|(?:オ気ニ入リ|オキニイリ|好キナ).*(?:場面|シーン)/.test(t)){
   scene=scenes.find(s=>s.id==='examination'&&s.participants.includes(memory.subject));
  }
- const examIntent=scene?.id==='examination'?( /クッキー|手作リ|作ッタ|買ッタ/.test(t)?'exam:cookie':/祝|オイワイ|翌朝|次ノ日/.test(t)?'exam:celebrate':/結果|合否|合格|不合格|落チ|オチ|気持チ|思ウ|ドウ思/.test(t)?'exam:result':/何話|ナンワ|話数/.test(t)?'exam:episodes':''):'';
+ const beforeResult=/結果.{0,8}(?:前|アト)|勉強|ベンキョウ|受験前|合格デキルカ/.test(t)&&!/勉強.{0,10}(?:ジャナク|デハナク)|勉強.{0,10}結果ヲ/.test(t);
+ const examIntent=scene?.id==='examination'?(beforeResult?'exam:attempt':/クッキー|手作リ|作ッタ|買ッタ/.test(t)?'exam:cookie':/祝|オイワイ|翌朝|次ノ日/.test(t)?'exam:celebrate':/結果|合否|合格|不合格|落チ|オチ|気持チ|思ウ|ドウ思/.test(t)?'exam:result':/何話|ナンワ|話数/.test(t)?'exam:episodes':''):'';
  const score=r=>(r.id===examIntent?100:0)+r.cues.reduce((n,c)=>n+(fold(c).length>=2&&t.includes(fold(c))?12:0),0)+(chii&&r.subject.includes(chii.name)?4:0);
  if(!explicit&&scene?.id==='examination'&&/(?:オ気ニ入リ|オキニイリ|好キナ|印象ニ残ル).*(?:場面|シーン)/.test(t))selected=[byId.get('exam:celebrate'),byId.get('exam:cookie')];
  else if(scene)selected=scene.ids.map(id=>byId.get(id)).filter(Boolean).sort((a,b)=>score(b)-score(a)||Number(memory.said.includes(a.id))-Number(memory.said.includes(b.id))).slice(0,3);
@@ -79,7 +93,7 @@ export function specialistPacket(input,state={},now=new Date()){
   selected=(direct.length?direct:candidates.filter(c=>c.score>0)).sort((a,b)=>b.score-a.score||a.r.id.localeCompare(b.r.id)).slice(0,3).map(c=>c.r);
   if(follow&&!chii&&memory.focus&&byId.get(memory.focus).subject===subject)selected=[byId.get(memory.focus),...selected.filter(r=>r.id!==memory.focus)].slice(0,3);
  }
- if(scene&&follow&&!examIntent&&!explicit&&byId.has(memory.focus)&&scene.ids.includes(memory.focus))selected=[byId.get(memory.focus),...selected.filter(r=>r.id!==memory.focus)].slice(0,3);
+ if(scene&&(follow||sceneContinuation)&&!examIntent&&!explicit&&byId.has(memory.focus)&&scene.ids.includes(memory.focus))selected=[byId.get(memory.focus),...selected.filter(r=>r.id!==memory.focus)].slice(0,3);
  if(conversation&&byId.has(memory.focus)&&selected.some(r=>r.id===memory.focus))selected=[byId.get(memory.focus),...selected.filter(r=>r.id!==memory.focus)].slice(0,3);
  // A supported factual question owns the first answer. Never use an opinion
  // or a knowledge boundary as permission to assert a new fact.
@@ -105,24 +119,26 @@ export function noteSpecialistDelivery(value,text,history=[]){
  // Selection is not delivery; interrupted/unspoken tails must not count.
  const matches=(line,r)=>line.includes(fold(r.fact))||line.includes(fold(r.spoken))||r.deliveredVariants?.some(v=>line.includes(fold(v)));
  const spoken=records.filter(r=>matches(t,r)),newFact=spoken.filter(r=>matches(current,r)||!matches(previous,r)).at(-1);
- return {...memory,...(newFact?{focus:newFact.id,scene:newFact.scene||memory.scene}:{}),said:[...new Set([...memory.said,...spoken.map(r=>r.id)])].slice(-32)};
+ return {...memory,...(newFact?{focus:newFact.id,deliveredFocus:newFact.id,scene:newFact.scene||memory.scene}:{}),said:[...new Set([...memory.said,...spoken.map(r=>r.id)])].slice(-32)};
 }
 export function specialistFallback(input,state={}){
  const packet=specialistPacket(input,state);if(!packet.active)return null;
  const correction=waterPlayCorrection(input,state);if(correction)return correction;
  const recent=substantiveHistory(state).filter(h=>h.role==='enny').map(h=>fold(h.text)).join('');
  const direct=packet.evidence[0],record=direct&&byId.get(direct.id);
+ const view=sceneConversationReply(packet.memory.scene,input,state);
+ if(view&&record&&(direct.said||!/何(?!か|カ)|ナニ(?!カ)|誰(?!か|カ)|ダレ(?!カ)/.test(input)))return direct.said?view:`${record.spoken} ${view}`;
  if(packet.memory.scene==='water'&&/遊|アソ/.test(input))return '遊んでいた、とは言わないよ。島二郎が手を回して水流を起こす話。アタシ、その頼もしさが好きなの。';
  if(/ネタバレ.{0,8}(?:しない|なし|ナシ)|ネタバレシナイ/.test(input))return 'うん、ここから先の展開は話さないね。見たところの感想だけ、一緒に話そう。';
  if(!record&&packet.memory.scene==='tv-opening')return 'TVアニメのオープニング曲は、この資料では確かめられないの。「くつずれ」は映画のOPだから、分けて話すね。';
  if(!record)return 'その場面の細部は、今の資料では確かめきれないの。どこが気になったか、あなたの言葉で聞きたいな。';
- if(/誰|ダレ|何|ナニ|だっけ|ダッケ/.test(input)&&!/どうして|なぜ|ドウシテ|ナゼ/.test(input))return record.spoken;
+ if(/誰(?!か|カ)|ダレ(?!カ)|何(?!か|カ)|ナニ(?!カ)|だっけ|ダッケ/.test(input)&&!/どうして|なぜ|ドウシテ|ナゼ/.test(input))return record.spoken;
  if(packet.memory.scene==='island-menu'&&/パフェ/.test(input))return '島二郎の店のメニューは、カツカレーと貝汁。パフェは島の別の食べ物だよ。作り手までは、この資料では確かめられないの。';
  if(packet.memory.scene==='ear'&&/好き|スキ/.test(input))return 'アタシ、可愛さだけじゃなくて、助けようとする勢いに力が入っちゃう。もしそばで見てたら、自分の手まで伸びそう。';
  if(packet.memory.scene==='strong-hachiware-goods'&&/集メ|アツメ|ガチ/.test(fold(input)))return `ファン全体で何が一番多いかは、今の資料ではわからないの。一つ例を挙げるね。${record.spoken} ${record.feeling}`;
  if(packet.memory.scene==='examination'&&/(?:なぜ|どうして|ナゼ|ドウシテ|理由).{0,18}(?:落|不合格|オチ)|(?:落|不合格|オチ).{0,18}(?:なぜ|どうして|ナゼ|ドウシテ|理由)/.test(input))return '落ちた理由や点数までは、確認した紹介には書いてないの。結果が違っても友達を大事にしたい、その気持ちはアタシも考えちゃう。';
  if(packet.memory.scene==='examination'&&/手作り|作った|買った|テヅクリ|ツクッタ|カッタ/.test(input))return '手作りか買ったものかまでは、確かめられないの。';
- if(packet.memory.scene==='examination'&&/気持ち|どう思|キモチ|ドウオモ/.test(input)){
+ if(packet.memory.scene==='examination'&&/気持ち|どう思|キモチ|ドウオモ|悔|嬉|ウレシ|胸に|胸ニ/.test(input)){
   const angles=packet.memory.subject==='ハチワレ'?['アタシなら、自分だけ受かった時、友達になんて声をかけるか迷っちゃう。嬉しさと気遣い、両方ありそう。','喜んでいいのかな、って考えちゃうかも。アタシは、友達の前でその嬉しさをどう伝えるかが気になる。']:['アタシなら、悔しさはすぐ消えないと思う。でも友達のお祝いはしたい。両方の気持ちでもいいよね。','笑ってお祝いしても、心がすぐ元気になるとは限らないよね。アタシ、その二つを分けて考えたい。'];
   return angles.find(line=>!recent.includes(fold(line)))||'アタシ、そこは一言で決めたくないな。どちらかだけが正しい気持ちじゃないと思う。';
  }
@@ -136,7 +152,6 @@ export function specialistFallback(input,state={}){
  // character just to find an unused stock line.
  if(!direct.said&&!recent.includes(fold(direct.spoken))){const reply=`${direct.spoken} ${feeling}`.trim();return reply.length<=180?reply:direct.spoken;}
  if(feeling)return feeling;
- if(fresh&&packet.memory.scene)return fresh.spoken;
  const question=packet.memory.subject==='ハチワレ'?'ハチワレのこと、アタシは友達への気遣いに目がいくの。あなたは、言葉と行動なら、どっちに惹かれる？':`${packet.memory.subject||'その子'}の話、もう少し一緒に見たいな。いま浮かんだ場面、ある？`;
  return recent.includes(fold(question))?'うん、いま教えてくれた見方でもう一度読みたくなった。アタシの見てなかったところも、見つかりそう。':question;
 }
