@@ -2,6 +2,14 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import game,{performanceDirection} from '../games/emmichy.js';
 import {profilePrompt} from '../games/emmichy-profile.js';
+
+test('captured live reaction keeps its connective and does not gain a dangling opinion prefix',()=>{
+ const messages=game.buildMessages({input:'草むしり検定の最初の結果は？',state:{knowledge:{work:'chiikawa'}}});
+ const raw=JSON.stringify({beats:[{fact:'exam:result',say:'ハチワレが合格して、ちいかわは不合格だったんだ。ちょっとショックだけど、ハチワレの頑張りにヤハ！って思う。',ask:null}]});
+ const result=game.validate(raw,{messages});
+ assert.equal(result.source,'mixed');assert.match(result.text,/ヤハ！って思う。/);assert.doesNotMatch(result.text,/見方だけど/);
+ assert.equal(result.text.match(/ハチワレが合格/g).length,1);
+});
 test('ambiguous affection delights Emmichy and known favourites keep their subject',()=>{
  for(const input of ['スキダヨ','好きだよ','愛してる','好みだよ']){
   const system=game.buildMessages({input,state:{}})[0].content;
