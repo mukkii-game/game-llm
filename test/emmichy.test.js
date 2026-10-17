@@ -5,6 +5,7 @@ import {profilePrompt} from '../games/emmichy-profile.js';
 import {exactNames} from '../games/emmichy-names.js';
 import {everydayFanConnection} from '../games/emmichy-chiikawa-theme.js';
 import {learnPlayerMessage} from '../games/emmichy-player-memory.js';
+import {validateKnowledgeCatalog} from '../games/emmichy-knowledge-catalog.js';
 
 test('server connections retain the reported player episode without making it canon',()=>{
  const state={history:[{role:'user',text:'友達にクッキーを作ったよ'}]};
@@ -13,6 +14,15 @@ test('server connections retain the reported player episode without making it ca
  assert.equal(everydayFanConnection(input,{connection:'made-up'}),null);
  assert.equal(learnPlayerMessage(null,'友達にクッキーを作ったよ').creations.length,0);
  assert.deepEqual(exactNames('チイカワ ノ キヅカイ ガ イイヨネ',{knowledge:{work:'chiikawa'}}).map(n=>n.name),['ちいかわ']);
+});
+
+test('the relay selects the actual answer to a catalogued question and keeps medium boundaries',()=>{
+ assert.deepEqual(validateKnowledgeCatalog(),[]);
+ const input='草むしり検定のお祝いに何を渡すの？',messages=game.buildMessages({input,state:{}});
+ const reply=game.validate(JSON.stringify({beats:[{fact:'exam:cookie'}]}),{messages});assert.match(reply.text,/クッキー/);assert.equal(reply.source,'authored');
+ const creator=game.buildMessages({input:'ちいかわの作者は誰？',state:{}});assert.match(creator[0].content,/ナガノ/);
+ const tv=game.buildMessages({input:'映画じゃなくテレビアニメのオープニング曲は？',state:{}});
+ assert.equal(game.validate(JSON.stringify({beats:[{fact:'reviewed:hachi:opening'}]}),{messages:tv}),null);
 });
 
 test('captured live reaction keeps its connective and does not gain a dangling opinion prefix',()=>{
