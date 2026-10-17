@@ -90,6 +90,7 @@ function buildSystem(data){
  const avoid=cleanDialogueControl(state.dialogueControl).avoidFandom||avoidsFandom(data.input,state.history||[]);
  const deflection=topicDeflection(data.input,state);
  const personal=personalFanReply(data.input,state);
+ const personalDirection=personal?.subject==='player-friend-food'?chiikawaBridgePrompt(data.input,state):personal?`今の問いは${personal.subject}への本人の感想。回答の材料（創作）: ${personal.text} この対象の話を深め、他のキャラや島編に置き換えない。`:'';
  const currentSerial=asksCurrentSerial(data.input,state);
  const specialist=!avoid&&!deflection&&!currentSerial?specialistPrompt(data.input,state):'';
  return `あなたはEmmichy。友達と約5分おしゃべりする、日本語勉強中の女の子。本文だけを普通の日本語で返す。自分でカタカナ化しない。一人称はアタシ。友達への短い話し言葉で、「です・ます」の解説文にしない。
@@ -112,7 +113,7 @@ ${humorDirection}
 答えの末尾に「もっと聞きたいことある？」「他のキャラは？」を毎回足さず、同じ人物への質問を答え切って相手を待つ。自分から話を少し広げる。質問攻めを避けるが必要な具体的質問は残す。最後の問いが「なぜ」なら、その理由を答え、前半にあった「好き」を好きなキャラの質問へすり替えない。挨拶と別れはゲームが担当するので自分から帰らない。原作の場面・台詞・未確認の最新話を捏造しない。解説・箇条書き・話者ラベルは付けない。
 ${performanceDirection(state,turn)}
 ${deflection?'性的な語への固定反応で短く驚き、別の話題へ。相手を責めず、性的な説明を続けない。':''}
-${avoid?'今回は相手が希望した話題だけに反応する。ちいかわや他の漫画へ戻さない。':currentSerial?relationPrompt(data.input,state):specialist||(personal?`今の問いは${personal.subject}への本人の感想。回答の材料（創作）: ${personal.text} この対象の話を深め、他のキャラや島編に置き換えない。`:knowledgePrompt(data.input,state)+fandomDirection(data.input,state)+nameHint(data.input,state)+chiikawaBridgePrompt(data.input,state))}
+${avoid?'今回は相手が希望した話題だけに反応する。ちいかわや他の漫画へ戻さない。':currentSerial?relationPrompt(data.input,state):specialist||personalDirection||knowledgePrompt(data.input,state)+fandomDirection(data.input,state)+nameHint(data.input,state)+chiikawaBridgePrompt(data.input,state)}
 ${praiseDirection(data.input,state)}
 ${specialist&&personal?`本人の感想の補助（創作、丸写ししない）: ${personal.subject}: ${personal.text}`:''}
 ${contextualNote(data.input,state)}

@@ -2,6 +2,18 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import game,{performanceDirection} from '../games/emmichy.js';
 import {profilePrompt} from '../games/emmichy-profile.js';
+import {exactNames} from '../games/emmichy-names.js';
+import {everydayFanConnection} from '../games/emmichy-chiikawa-theme.js';
+import {learnPlayerMessage} from '../games/emmichy-player-memory.js';
+
+test('server connections retain the reported player episode without making it canon',()=>{
+ const state={history:[{role:'user',text:'友達にクッキーを作ったよ'}]};
+ const input='友達が一緒に食べてくれた',messages=game.buildMessages({input,state});
+ assert.match(messages[0].content,/プレイヤー自身.*友達/);assert.match(messages[0].content,/原作に同じ出来事があったとは言わない/);
+ assert.equal(everydayFanConnection(input,{connection:'made-up'}),null);
+ assert.equal(learnPlayerMessage(null,'友達にクッキーを作ったよ').creations.length,0);
+ assert.deepEqual(exactNames('チイカワ ノ キヅカイ ガ イイヨネ',{knowledge:{work:'chiikawa'}}).map(n=>n.name),['ちいかわ']);
+});
 
 test('captured live reaction keeps its connective and does not gain a dangling opinion prefix',()=>{
  const messages=game.buildMessages({input:'草むしり検定の最初の結果は？',state:{knowledge:{work:'chiikawa'}}});
