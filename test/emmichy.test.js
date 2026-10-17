@@ -97,7 +97,7 @@ test('ordinary Japanese is accepted for client-side kana display',()=>{
  assert.match(system,/自分でカタカナ化しない/);assert.match(system,/架空の単語/);
  assert.match(system,/知ったかぶりせず/);assert.match(system,/説明の具体的な内容/);
  assert.deepEqual(game.providers,['groq','gemini','workers-ai']);
- assert.equal(game.reportSource,true);assert.equal(game.stopOnRateLimit,true);
+ assert.equal(game.reportSource,true);assert.equal(game.stopOnRateLimit,false);assert.equal(game.providerCooldown,true);
  assert.equal(game.providerTimeoutMs,3500);assert.equal(game.requestBudgetMs,7200);
 });
 

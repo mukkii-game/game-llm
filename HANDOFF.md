@@ -1,3 +1,11 @@
+# 2026-10-17 Emmichy: rate-limit recovery candidate
+
+Main is the sole integration/publication branch; validated fixes are authorized for immediate publication. Older pilot/approval/stop-all-on-429 instructions below are historical. No paid-service or billing changes.
+
+User requested progress toward completion and actual daily provider capacity. Live read-only /health confirms groq, gemini and workers-ai are configured. Found Emmichy stopOnRateLimit=true and browser's permanent per-play latch: one Groq429 prevented both backups. Gameplay now falls through, temporarily cools each limited provider (Retry-After/default60s), and reports finite all-provider cooldown. Keep per-game3500ms/total7200ms. Best-effort cooldown is per env/isolate, not a distributed quota or billing cap. Other games keep their policy. QA explicitly stops at first429 and max2calls. Safe numeric token/remaining-quota counters added; no ordinary player text in logs. 69 backend tests pass; paired frontend246 tests pass including actual-app later recovery. Live generation and publication recorded in Emmichy/docs/llm-capacity-20261017.md after verification. Exact Gemini quota and Cloudflare billing plan remain unverified; do not claim guaranteed free capacity.
+
+---
+
 # 2026-10-12 Emmichy: Chiikawa pilot published with user permission
 
 User authorized paired publication for their playtest. PR15 merged as636ac2d2013ff8a7f45daf237c9a6a13d9805258; Deploy38170890200 success including51 tests; Worker8e5a629c-ed5b-4d8e-9a86-def54ae6feeb. Health OK. Frontend PR28 merged into pilot as8be7c77d166b6ed8bd6b2d8e7e78a0c8f270e5ff, Pages38170960518 success, runtime20261012-chii1; all25 changed public files match candidate. Frontend main unchanged. Emmichy/docs/public-chiikawa-pilot-20261012.json records verification. No new LLM calls after prior429; final live generation/human appeal left for user playtest. This follow-up records publication only; no new service or Relay.
